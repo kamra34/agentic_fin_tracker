@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   getCategories,
   getCategoriesWithStats,
@@ -27,7 +27,15 @@ import './Management.css'
 
 function Management() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { formatAmount } = useCurrency()
+
+  // Determine which section to show based on URL
+  const currentPath = location.pathname
+  const showCategories = currentPath.includes('/categories')
+  const showIncome = currentPath.includes('/income')
+  const showRecurring = currentPath.includes('/recurring')
+  const showAccounts = currentPath.includes('/accounts')
   const [categories, setCategories] = useState([])
   const [accounts, setAccounts] = useState([])
   const [incomeTemplates, setIncomeTemplates] = useState([])
@@ -390,36 +398,8 @@ function Management() {
 
   return (
     <div className="management">
-      <div className="page-header">
-        <h2 className="page-title">Management</h2>
-        <p className="page-subtitle">Manage your categories, income sources, recurring expenses, and payment accounts</p>
-      </div>
-
-      {/* Statistics Overview */}
-      <div className="stats-overview">
-        <div className="stat-card">
-          <h3>Categories</h3>
-          <p className="stat-number">{categories.length}</p>
-          <p className="stat-label">Total categories</p>
-        </div>
-        <div className="stat-card">
-          <h3>Income Sources</h3>
-          <p className="stat-number">{incomeTemplates.length}</p>
-          <p className="stat-label">Active income sources</p>
-        </div>
-        <div className="stat-card">
-          <h3>Recurring Expenses</h3>
-          <p className="stat-number">{expenseTemplates.length}</p>
-          <p className="stat-label">Active recurring expenses</p>
-        </div>
-        <div className="stat-card">
-          <h3>Payment Accounts</h3>
-          <p className="stat-number">{accounts.length}</p>
-          <p className="stat-label">Total payment accounts</p>
-        </div>
-      </div>
-
       {/* Categories Section */}
+      {showCategories && (
       <div className="management-section">
         <div className="section-header">
           <h3>Categories</h3>
@@ -499,8 +479,10 @@ function Management() {
           )}
         </div>
       </div>
+      )}
 
       {/* Income Sources Section */}
+      {showIncome && (
       <div className="management-section">
         <div className="section-header">
           <h3>Income Sources</h3>
@@ -589,8 +571,10 @@ function Management() {
           )}
         </div>
       </div>
+      )}
 
       {/* Recurring Expenses Section */}
+      {showRecurring && (
       <div className="management-section">
         <div className="section-header">
           <h3>Recurring Expenses</h3>
@@ -742,8 +726,10 @@ function Management() {
           )}
         </div>
       </div>
+      )}
 
       {/* Payment Accounts Section */}
+      {showAccounts && (
       <div className="management-section">
         <div className="section-header">
           <h3>Payment Accounts</h3>
@@ -820,9 +806,10 @@ function Management() {
           )}
         </div>
       </div>
+      )}
 
       {/* Category Details Modal */}
-      {showModal && selectedCategory && (
+      {showCategories && showModal && selectedCategory && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">

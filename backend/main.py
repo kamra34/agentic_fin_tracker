@@ -6,6 +6,12 @@ from app.core.config import settings
 from app.api import auth, expenses, dashboard, categories, accounts, incomes
 from app.models import user, expense, account, category, income  # Import all models for SQLAlchemy
 import json
+import time
+import logging
+
+# Configure logging for performance monitoring
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,6 +37,30 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=422,
         content={"detail": exc.errors(), "body": exc.body}
     )
+
+# Add timing middleware for performance monitoring
+@app.middleware("http")
+async def add_timing_header(request: Request, call_next):
+    start_time = time.time()
+
+    # Log request start
+    logger.info(f"⏱️  START: {request.method} {request.url.path}")
+
+    response = await call_next(request)
+
+    # Calculate processing time
+    process_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+    # Add timing header to response
+    response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
+
+    # Log completion with timing
+    if process_time > 1000:  # Warn if over 1 second
+        logger.warning(f"⚠️  SLOW: {request.method} {request.url.path} - {process_time:.2f}ms")
+    else:
+        logger.info(f"✅ DONE: {request.method} {request.url.path} - {process_time:.2f}ms")
+
+    return response
 
 # Configure CORS
 app.add_middleware(

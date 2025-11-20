@@ -79,52 +79,90 @@ class CategoryService:
         return True
 
     def get_categories_with_stats(self, user_id: int) -> List[Dict]:
-        """Get categories with expense counts and totals"""
-        categories = self.get_categories(user_id)
-        result = []
+        """Get categories with expense counts and totals - optimized single query"""
+        from sqlalchemy import case
 
-        for category in categories:
-            stats = self.db.query(
+        # Get all active categories for this user
+        categories = self.get_categories(user_id)
+
+        # Get all category IDs
+        category_ids = [c.id for c in categories]
+
+        if not category_ids:
+            return []
+
+        # Single query to get expense stats for all categories
+        category_stats = self.db.query(
+            Expense.category_id,
+            func.count(Expense.id).label('count'),
+            func.sum(Expense.amount).label('total')
+        ).filter(
+            Expense.category_id.in_(category_ids),
+            Expense.user_id == user_id,
+            Expense.status == True
+        ).group_by(Expense.category_id).all()
+
+        # Convert to dict for O(1) lookup
+        category_stats_dict = {
+            stat.category_id: {'count': stat.count or 0, 'total': float(stat.total or 0)}
+            for stat in category_stats
+        }
+
+        # Get all active subcategories for these categories
+        all_subcategories = self.db.query(Subcategory).filter(
+            Subcategory.category_id.in_(category_ids),
+            Subcategory.is_active == True
+        ).all()
+
+        # Get all subcategory IDs
+        subcategory_ids = [s.id for s in all_subcategories]
+
+        # Single query to get expense stats for all subcategories
+        subcategory_stats_dict = {}
+        if subcategory_ids:
+            subcategory_stats = self.db.query(
+                Expense.subcategory_id,
                 func.count(Expense.id).label('count'),
                 func.sum(Expense.amount).label('total')
             ).filter(
-                Expense.category_id == category.id,
+                Expense.subcategory_id.in_(subcategory_ids),
                 Expense.user_id == user_id,
                 Expense.status == True
-            ).first()
+            ).group_by(Expense.subcategory_id).all()
 
-            # Get subcategories with their statistics (only active ones)
-            subcategories_with_stats = []
-            for sub in category.subcategories:
-                # Skip inactive subcategories
-                if not sub.is_active:
-                    continue
+            subcategory_stats_dict = {
+                stat.subcategory_id: {'count': stat.count or 0, 'total': float(stat.total or 0)}
+                for stat in subcategory_stats
+            }
 
-                sub_stats = self.db.query(
-                    func.count(Expense.id).label('count'),
-                    func.sum(Expense.amount).label('total')
-                ).filter(
-                    Expense.subcategory_id == sub.id,
-                    Expense.user_id == user_id,
-                    Expense.status == True
-                ).first()
+        # Build subcategories dict grouped by category_id
+        subcategories_by_category = {}
+        for sub in all_subcategories:
+            if sub.category_id not in subcategories_by_category:
+                subcategories_by_category[sub.category_id] = []
 
-                subcategories_with_stats.append({
-                    'id': sub.id,
-                    'name': sub.name,
-                    'is_active': sub.is_active,
-                    'expense_count': sub_stats.count or 0,
-                    'total_amount': float(sub_stats.total or 0)
-                })
+            stats = subcategory_stats_dict.get(sub.id, {'count': 0, 'total': 0.0})
+            subcategories_by_category[sub.category_id].append({
+                'id': sub.id,
+                'name': sub.name,
+                'is_active': sub.is_active,
+                'expense_count': stats['count'],
+                'total_amount': stats['total']
+            })
+
+        # Build final result
+        result = []
+        for category in categories:
+            stats = category_stats_dict.get(category.id, {'count': 0, 'total': 0.0})
 
             result.append({
                 'id': category.id,
                 'name': category.name,
                 'category_type': category.category_type,
                 'is_active': category.is_active,
-                'expense_count': stats.count or 0,
-                'total_amount': float(stats.total or 0),
-                'subcategories': subcategories_with_stats
+                'expense_count': stats['count'],
+                'total_amount': stats['total'],
+                'subcategories': subcategories_by_category.get(category.id, [])
             })
 
         return result

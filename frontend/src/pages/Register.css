@@ -1,4 +1,4 @@
-.login-container {
+.register-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -10,7 +10,7 @@
 }
 
 /* Animated Background */
-.login-container::before {
+.register-container::before {
   content: '';
   position: absolute;
   top: -50%;
@@ -33,7 +33,7 @@
 }
 
 /* Floating Elements */
-.login-container::after {
+.register-container::after {
   content: '';
   position: absolute;
   top: 10%;
@@ -56,7 +56,7 @@
   }
 }
 
-.login-card {
+.register-card {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   padding: 3rem;
@@ -64,7 +64,7 @@
   box-shadow: var(--shadow-xl),
               inset 0 1px 0 rgba(255, 255, 255, 0.05);
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   border: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
@@ -121,9 +121,9 @@
 }
 
 /* Logo/Brand Section */
-.login-brand {
+.register-brand {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .brand-icon {
@@ -143,7 +143,7 @@
   }
 }
 
-.login-card h1 {
+.register-card h1 {
   margin-bottom: 0.5rem;
   font-size: 2.5rem;
   font-weight: 800;
@@ -156,7 +156,7 @@
   display: inline-block;
 }
 
-.login-card h2 {
+.register-card h2 {
   margin-top: 0.5rem;
   color: var(--text-secondary);
   font-size: 1rem;
@@ -191,12 +191,12 @@
 }
 
 /* Form Styling */
-.login-card .form-group {
-  margin-bottom: 1.75rem;
+.register-card .form-group {
+  margin-bottom: 1.5rem;
   position: relative;
 }
 
-.login-card .form-group label {
+.register-card .form-group label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -208,7 +208,7 @@
   margin-bottom: 0.75rem;
 }
 
-.login-card .form-group label svg {
+.register-card .form-group label svg {
   color: var(--primary-color);
 }
 
@@ -216,7 +216,7 @@
   position: relative;
 }
 
-.login-card .form-group input {
+.register-card .form-group input {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   transition: all var(--transition-base);
@@ -225,7 +225,7 @@
   width: 100%;
 }
 
-.login-card .form-group input:focus {
+.register-card .form-group input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   background-color: var(--bg-tertiary);
@@ -262,7 +262,7 @@
 }
 
 /* Button Styling */
-.login-card .btn {
+.register-card .btn {
   width: 100%;
   padding: 1rem;
   font-size: 1rem;
@@ -273,18 +273,18 @@
   overflow: hidden;
 }
 
-.login-card .btn svg {
+.register-card .btn svg {
   position: relative;
   z-index: 1;
 }
 
-.login-card .btn:disabled {
+.register-card .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
 }
 
-.login-card .btn:disabled:hover {
+.register-card .btn:disabled:hover {
   box-shadow: var(--shadow-glow-sm);
 }
 
@@ -320,7 +320,7 @@
   margin-bottom: 0.75rem;
 }
 
-.register-link {
+.login-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -333,21 +333,21 @@
   border-radius: var(--radius-md);
 }
 
-.register-link:hover {
+.login-link:hover {
   background-color: rgba(99, 102, 241, 0.1);
   gap: 0.75rem;
 }
 
-.register-link svg {
+.login-link svg {
   transition: transform var(--transition-base);
 }
 
-.register-link:hover svg {
+.login-link:hover svg {
   transform: translateX(3px);
 }
 
 /* Decorative Elements */
-.login-card::before {
+.register-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -361,35 +361,34 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .login-container {
+  .register-container {
     padding: 1rem;
   }
 
-  .login-card {
+  .register-card {
     padding: 2rem 1.5rem;
     max-width: 100%;
   }
 
-  .login-card h1 {
+  .register-card h1 {
     font-size: 1.875rem;
   }
 
-  .login-card h2 {
+  .register-card h2 {
     font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
-  .login-card {
+  .register-card {
     padding: 1.75rem 1.25rem;
   }
 
-  .login-card h1 {
+  .register-card h1 {
     font-size: 1.625rem;
   }
 
-  .login-info {
-    padding: 1rem;
-    font-size: 0.8rem;
+  .register-card .form-group {
+    margin-bottom: 1.25rem;
   }
 }

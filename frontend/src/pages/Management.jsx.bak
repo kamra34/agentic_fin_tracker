@@ -1,0 +1,290 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  getCategories,
+  getCategoriesWithStats,
+  getAccounts,
+  getAccountsWithStats,
+  createCategory,
+  createAccount,
+  deleteCategory,
+  deleteAccount
+} from '../services/api'
+import { useCurrency } from '../context/CurrencyContext'
+import './Management.css'
+
+function Management() {
+  const navigate = useNavigate()
+  const { formatAmount } = useCurrency()
+  const [categories, setCategories] = useState([])
+  const [accounts, setAccounts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showCategoryForm, setShowCategoryForm] = useState(false)
+  const [showAccountForm, setShowAccountForm] = useState(false)
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: '',
+    category_type: 'expense'
+  })
+  const [accountFormData, setAccountFormData] = useState({
+    name: '',
+    owner_name: ''
+  })
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [categoriesData, accountsData] = await Promise.all([
+        getCategoriesWithStats(),
+        getAccountsWithStats()
+      ])
+      setCategories(categoriesData)
+      setAccounts(accountsData)
+    } catch (error) {
+      console.error('Error loading management data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await createCategory(categoryFormData)
+      setShowCategoryForm(false)
+      setCategoryFormData({ name: '', category_type: 'expense' })
+      await loadData()
+    } catch (error) {
+      console.error('Error creating category:', error)
+      alert('Failed to create category: ' + (error.message || 'Unknown error'))
+    }
+  }
+
+  const handleAccountSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await createAccount(accountFormData)
+      setShowAccountForm(false)
+      setAccountFormData({ name: '', owner_name: '' })
+      await loadData()
+    } catch (error) {
+      console.error('Error creating payment account:', error)
+      alert('Failed to create payment account: ' + (error.message || 'Unknown error'))
+    }
+  }
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (window.confirm('Are you sure you want to delete this category? This cannot be undone.')) {
+      try {
+        await deleteCategory(categoryId)
+        await loadData()
+      } catch (error) {
+        console.error('Error deleting category:', error)
+        alert('Failed to delete category: ' + (error.message || 'Unknown error'))
+      }
+    }
+  }
+
+  const handleDeleteAccount = async (accountId) => {
+    if (window.confirm('Are you sure you want to delete this payment account? This cannot be undone.')) {
+      try {
+        await deleteAccount(accountId)
+        await loadData()
+      } catch (error) {
+        console.error('Error deleting payment account:', error)
+        alert('Failed to delete payment account: ' + (error.message || 'Unknown error'))
+      }
+    }
+  }
+
+  if (loading) {
+    return <div className="loading">Loading...</div>
+  }
+
+  return (
+    <div className="management">
+      <div className="page-header">
+        <h2 className="page-title">Management</h2>
+        <p className="page-subtitle">Manage your categories and payment accounts</p>
+      </div>
+
+      {/* Statistics Overview */}
+      <div className="stats-overview">
+        <div className="stat-card">
+          <h3>Categories</h3>
+          <p className="stat-number">{categories.length}</p>
+          <p className="stat-label">Total categories</p>
+        </div>
+        <div className="stat-card">
+          <h3>Payment Accounts</h3>
+          <p className="stat-number">{accounts.length}</p>
+          <p className="stat-label">Total payment accounts</p>
+        </div>
+      </div>
+
+      {/* Categories Section */}
+      <div className="management-section">
+        <div className="section-header">
+          <h3>Categories</h3>
+          <button
+            onClick={() => setShowCategoryForm(!showCategoryForm)}
+            className="btn-add"
+          >
+            {showCategoryForm ? 'Cancel' : '+ Add Category'}
+          </button>
+        </div>
+
+        {showCategoryForm && (
+          <div className="form-card">
+            <form onSubmit={handleCategorySubmit} className="management-form">
+              <div className="form-group">
+                <label htmlFor="category-name">Category Name</label>
+                <input
+                  type="text"
+                  id="category-name"
+                  value={categoryFormData.name}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., Groceries, Entertainment"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="category-type">Type</label>
+                <select
+                  id="category-type"
+                  value={categoryFormData.category_type}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, category_type: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                  <option value="saving">Saving</option>
+                </select>
+              </div>
+              <button type="submit" className="btn-primary">Create Category</button>
+            </form>
+          </div>
+        )}
+
+        <div className="items-grid">
+          {categories.length === 0 ? (
+            <p className="empty-state">No categories yet. Create one to get started!</p>
+          ) : (
+            categories.map((category) => (
+              <div key={category.id} className="item-card">
+                <div className="item-header">
+                  <h4>{category.name}</h4>
+                  <span className={`type-badge ${category.category_type}`}>
+                    {category.category_type}
+                  </span>
+                </div>
+                <div className="item-stats">
+                  <div className="stat">
+                    <span className="stat-value">{category.expense_count || 0}</span>
+                    <span className="stat-label">expenses</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-value">{formatAmount(category.total_amount || 0)}</span>
+                    <span className="stat-label">total</span>
+                  </div>
+                </div>
+                <div className="item-actions">
+                  <button
+                    onClick={() => handleDeleteCategory(category.id)}
+                    className="btn-delete-small"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Payment Accounts Section */}
+      <div className="management-section">
+        <div className="section-header">
+          <h3>Payment Accounts</h3>
+          <button
+            onClick={() => setShowAccountForm(!showAccountForm)}
+            className="btn-add"
+          >
+            {showAccountForm ? 'Cancel' : '+ Add Payment Account'}
+          </button>
+        </div>
+
+        {showAccountForm && (
+          <div className="form-card">
+            <form onSubmit={handleAccountSubmit} className="management-form">
+              <div className="form-group">
+                <label htmlFor="account-name">Account Name</label>
+                <input
+                  type="text"
+                  id="account-name"
+                  value={accountFormData.name}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., Main Bank Account, Credit Card"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="owner-name">Owner Name</label>
+                <input
+                  type="text"
+                  id="owner-name"
+                  value={accountFormData.owner_name}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, owner_name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., John Doe"
+                />
+              </div>
+              <button type="submit" className="btn-primary">Create Payment Account</button>
+            </form>
+          </div>
+        )}
+
+        <div className="items-grid">
+          {accounts.length === 0 ? (
+            <p className="empty-state">No payment accounts yet. Create one to get started!</p>
+          ) : (
+            accounts.map((account) => (
+              <div key={account.id} className="item-card">
+                <div className="item-header">
+                  <h4>{account.name}</h4>
+                  <span className="owner-badge">{account.owner_name}</span>
+                </div>
+                <div className="item-stats">
+                  <div className="stat">
+                    <span className="stat-value">{account.expense_count || 0}</span>
+                    <span className="stat-label">expenses</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-value">{formatAmount(account.total_amount || 0)}</span>
+                    <span className="stat-label">total</span>
+                  </div>
+                </div>
+                <div className="item-actions">
+                  <button
+                    onClick={() => handleDeleteAccount(account.id)}
+                    className="btn-delete-small"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Management

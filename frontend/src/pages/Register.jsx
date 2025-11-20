@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { login } from '../services/api'
-import './Login.css'
+import { register, login } from '../services/api'
+import './Register.css'
 
-function Login() {
+function Register() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullName: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -24,28 +27,40 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (formData.password.length < 4) {
+      setError('Password must be at least 4 characters long')
+      return
+    }
+
     setLoading(true)
 
     try {
-      const response = await login(formData.username, formData.password)
-      localStorage.setItem('token', response.access_token)
+      await register(formData.email, formData.password, formData.fullName)
+      const loginResponse = await login(formData.email, formData.password)
+      localStorage.setItem('token', loginResponse.access_token)
       navigate('/')
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.')
+      setError(err.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="login-container">
+    <div className="register-container">
       {/* Decorative floating shapes */}
       <div className="floating-shape shape-1"></div>
       <div className="floating-shape shape-2"></div>
       <div className="floating-shape shape-3"></div>
 
-      <div className="login-card">
-        <div className="login-brand">
+      <div className="register-card">
+        <div className="register-brand">
           <div className="brand-icon">
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="48" height="48" rx="12" fill="url(#gradient1)"/>
@@ -60,7 +75,7 @@ function Login() {
             </svg>
           </div>
           <h1>FinTrack</h1>
-          <h2>Welcome Back</h2>
+          <h2>Create Your Account</h2>
         </div>
 
         {error && (
@@ -76,7 +91,29 @@ function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">
+            <label htmlFor="fullName">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+                <path d="M4 18C4 15.7909 6.23858 14 9 14H11C13.7614 14 16 15.7909 16 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              Full Name
+            </label>
+            <div className="input-wrapper">
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                autoComplete="name"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V15C17 16.1046 16.1046 17 15 17H5C3.89543 17 3 16.1046 3 15V5Z" stroke="currentColor" strokeWidth="2"/>
                 <path d="M3 7L10 11L17 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -86,9 +123,9 @@ function Login() {
             <div className="input-wrapper">
               <input
                 type="email"
-                id="username"
-                name="username"
-                value={formData.username}
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
                 autoComplete="email"
@@ -113,8 +150,8 @@ function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                autoComplete="current-password"
-                placeholder="Enter your password"
+                autoComplete="new-password"
+                placeholder="Create a password"
               />
               <button
                 type="button"
@@ -138,27 +175,68 @@ function Login() {
             </div>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="confirmPassword">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 10C16 13.3137 13.3137 16 10 16C6.68629 16 4 13.3137 4 10C4 6.68629 6.68629 4 10 4C13.3137 4 16 6.68629 16 10Z" stroke="currentColor" strokeWidth="2"/>
+                <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Confirm Password
+            </label>
+            <div className="input-wrapper password-wrapper">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                placeholder="Confirm your password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 3L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M10 7C11.6569 7 13 8.34315 13 10C13 10.3453 12.9393 10.677 12.8282 10.9854" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M7.17188 7.90909C7.06152 8.24999 7 8.61761 7 9C7 10.6569 8.34315 12 10 12C10.3824 12 10.75 11.9385 11.0909 11.8281" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 10C2 10 5 4 10 4C15 4 18 10 18 10C18 10 15 16 10 16C5 16 2 10 2 10Z" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? (
               <>
                 <span className="spinner"></span>
-                Logging in...
+                Creating Account...
               </>
             ) : (
               <>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M13 10L8 5M13 10L8 15M13 10H3M13 5.83333V4.2C13 3.07989 13 2.51984 12.782 2.09202C12.5903 1.71569 12.2843 1.40973 11.908 1.21799C11.4802 1 10.9201 1 9.8 1H4.2C3.0799 1 2.51984 1 2.09202 1.21799C1.71569 1.40973 1.40973 1.71569 1.21799 2.09202C1 2.51984 1 3.07989 1 4.2V15.8C1 16.9201 1 17.4802 1.21799 17.908C1.40973 18.2843 1.71569 18.5903 2.09202 18.782C2.51984 19 3.07989 19 4.2 19H9.8C10.9201 19 11.4802 19 11.908 18.782C12.2843 18.5903 12.5903 18.2843 12.782 17.908C13 17.4802 13 16.9201 13 15.8V14.1667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Sign In
+                Create Account
               </>
             )}
           </button>
         </form>
 
         <div className="auth-footer">
-          <p>Don't have an account?</p>
-          <Link to="/register" className="register-link">
-            Create Account
+          <p>Already have an account?</p>
+          <Link to="/login" className="login-link">
+            Sign In
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7 3L14 10L7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -169,4 +247,4 @@ function Login() {
   )
 }
 
-export default Login
+export default Register
