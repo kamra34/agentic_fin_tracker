@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from app.models.expense import Expense
+from app.models.category import Category, Subcategory
 from app.models.schemas import ExpenseCreate, ExpenseUpdate
 from typing import List, Optional, Dict
 from datetime import date, datetime
@@ -11,13 +12,29 @@ class ExpenseService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _enrich_expense_with_names(self, expense: Expense) -> Expense:
+        """Add category_name and subcategory_name attributes to expense object"""
+        if expense.category_id:
+            category = self.db.query(Category).filter(Category.id == expense.category_id).first()
+            expense.category_name = category.name if category else None
+        else:
+            expense.category_name = None
+
+        if expense.subcategory_id:
+            subcategory = self.db.query(Subcategory).filter(Subcategory.id == expense.subcategory_id).first()
+            expense.subcategory_name = subcategory.name if subcategory else None
+        else:
+            expense.subcategory_name = None
+
+        return expense
+
     def create_expense(self, expense: ExpenseCreate, user_id: int) -> Expense:
         """Create a new expense"""
         db_expense = Expense(**expense.model_dump(), user_id=user_id)
         self.db.add(db_expense)
         self.db.commit()
         self.db.refresh(db_expense)
-        return db_expense
+        return self._enrich_expense_with_names(db_expense)
 
     def get_expenses(
         self,
@@ -44,14 +61,16 @@ class ExpenseService:
         if status is not None:
             query = query.filter(Expense.status == status)
 
-        return query.order_by(Expense.date.desc()).offset(skip).limit(limit).all()
+        expenses = query.order_by(Expense.date.desc()).offset(skip).limit(limit).all()
+        return [self._enrich_expense_with_names(exp) for exp in expenses]
 
     def get_expense_by_id(self, expense_id: int, user_id: int) -> Optional[Expense]:
         """Get a specific expense by ID for a user"""
-        return self.db.query(Expense).filter(
+        expense = self.db.query(Expense).filter(
             Expense.id == expense_id,
             Expense.user_id == user_id
         ).first()
+        return self._enrich_expense_with_names(expense) if expense else None
 
     def update_expense(
         self,
@@ -60,7 +79,10 @@ class ExpenseService:
         expense_update: ExpenseUpdate
     ) -> Optional[Expense]:
         """Update an expense"""
-        db_expense = self.get_expense_by_id(expense_id, user_id)
+        db_expense = self.db.query(Expense).filter(
+            Expense.id == expense_id,
+            Expense.user_id == user_id
+        ).first()
         if not db_expense:
             return None
 
@@ -70,7 +92,7 @@ class ExpenseService:
 
         self.db.commit()
         self.db.refresh(db_expense)
-        return db_expense
+        return self._enrich_expense_with_names(db_expense)
 
     def delete_expense(self, expense_id: int, user_id: int) -> bool:
         """Delete an expense"""
@@ -128,11 +150,12 @@ class ExpenseService:
         start_date = date(year, month, 1)
         end_date = date(year, month, last_day)
 
-        return self.db.query(Expense).filter(
+        expenses = self.db.query(Expense).filter(
             Expense.user_id == user_id,
             Expense.date >= start_date,
             Expense.date <= end_date
         ).order_by(Expense.date.desc()).all()
+        return [self._enrich_expense_with_names(exp) for exp in expenses]
 
     def get_monthly_summary(self, user_id: int, year: int, month: int) -> Dict:
         """Get summary statistics for a specific month"""
