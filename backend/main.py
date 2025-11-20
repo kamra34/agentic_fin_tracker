@@ -94,3 +94,14 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
+
+@app.get("/debug/config")
+async def debug_config():
+    """Debug endpoint to check configuration"""
+    return {
+        "cors_origins": settings.cors_origins,
+        "allowed_origins_raw": settings.ALLOWED_ORIGINS,
+        "project_name": settings.PROJECT_NAME,
+        "version": settings.VERSION
+    }
+
