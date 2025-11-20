@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     OLD_DATABASE_URL: str = ""  # Optional: for reference only
 
     # CORS - accepts comma-separated string from .env
-    ALLOWED_ORIGINS: str = "http://localhost:5174,http://localhost:3000"
+    ALLOWED_ORIGINS: str = "https://agentic-fin-tracker.vercel.app,http://localhost:5174,http://localhost:3000"
 
     # Security
     SECRET_KEY: str
