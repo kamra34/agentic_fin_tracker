@@ -209,7 +209,7 @@ class AccountWithStats(AccountResponse):
 # Income Template Schemas (Recurring income sources)
 class IncomeTemplateBase(BaseModel):
     source_name: str = Field(..., min_length=1, max_length=100)
-    current_amount: float = Field(..., gt=0)
+    current_amount: float = Field(..., ge=0)
 
 
 class IncomeTemplateCreate(IncomeTemplateBase):
@@ -218,7 +218,7 @@ class IncomeTemplateCreate(IncomeTemplateBase):
 
 class IncomeTemplateUpdate(BaseModel):
     source_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    current_amount: Optional[float] = Field(None, gt=0)
+    current_amount: Optional[float] = Field(None, ge=0)
     is_active: Optional[bool] = None
 
 
@@ -237,7 +237,7 @@ class IncomeTemplateResponse(IncomeTemplateBase):
 class MonthlyIncomeBase(BaseModel):
     month: str = Field(..., pattern=r'^\d{4}-\d{2}$')  # Format: YYYY-MM
     source_name: str = Field(..., min_length=1, max_length=100)
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., ge=0)
     is_one_time: bool = False
     description: Optional[str] = Field(None, max_length=255)
 
@@ -246,14 +246,14 @@ class MonthlyIncomeCreate(BaseModel):
     month: str = Field(..., pattern=r'^\d{4}-\d{2}$')
     template_id: Optional[int] = None  # If from template
     source_name: str = Field(..., min_length=1, max_length=100)
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., ge=0)
     is_one_time: bool = False
     description: Optional[str] = Field(None, max_length=255)
 
 
 class MonthlyIncomeUpdate(BaseModel):
     source_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    amount: Optional[float] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, ge=0)
     description: Optional[str] = Field(None, max_length=255)
 
 
@@ -269,7 +269,7 @@ class MonthlyIncomeResponse(MonthlyIncomeBase):
 # Expense Template Schemas
 class ExpenseTemplateBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., ge=0)
     category_id: int
     subcategory_id: Optional[int] = None
     account_id: Optional[int] = None
@@ -281,7 +281,7 @@ class ExpenseTemplateCreate(ExpenseTemplateBase):
 
 class ExpenseTemplateUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
-    amount: Optional[float] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, ge=0)
     category_id: Optional[int] = None
     subcategory_id: Optional[int] = None
     account_id: Optional[int] = None

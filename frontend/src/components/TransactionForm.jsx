@@ -77,8 +77,7 @@ function TransactionForm({ onSubmit, onCancel }) {
             value={formData.amount}
             onChange={handleChange}
             step="0.01"
-            min="0.01"
-            required
+            min="0"
           />
         </div>
 

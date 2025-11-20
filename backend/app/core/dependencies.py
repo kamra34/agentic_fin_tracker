@@ -5,23 +5,18 @@ from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.models.schemas import TokenData
-from cachetools import TTLCache
 import logging
 
 logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-# Cache for user lookups - keeps users in memory for 10 minutes
-# Max 1000 users to prevent memory issues
-user_cache = TTLCache(maxsize=1000, ttl=600)  # 10 minutes TTL
-
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
-    """Get the current authenticated user from JWT token with caching"""
+    """Get the current authenticated user from JWT token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -32,20 +27,10 @@ async def get_current_user(
     if email is None:
         raise credentials_exception
 
-    # Check cache first
-    if email in user_cache:
-        logger.info(f"⚡ User cache HIT for {email}")
-        return user_cache[email]
-
-    # Cache miss - query database
-    logger.info(f"🔍 User cache MISS for {email} - querying database")
+    # Query database for user
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
-
-    # Store in cache for future requests
-    user_cache[email] = user
-    logger.info(f"💾 Cached user {email} for 10 minutes")
 
     return user
 

@@ -524,7 +524,6 @@ function Management() {
                   min="0"
                   value={incomeFormData.current_amount}
                   onChange={(e) => setIncomeFormData({ ...incomeFormData, current_amount: e.target.value })}
-                  required
                   className="form-input"
                   placeholder="e.g., 50000"
                 />
@@ -616,7 +615,6 @@ function Management() {
                   min="0"
                   value={expenseTemplateFormData.amount}
                   onChange={(e) => setExpenseTemplateFormData({ ...expenseTemplateFormData, amount: e.target.value })}
-                  required
                   className="form-input"
                   placeholder="e.g., 15000"
                 />

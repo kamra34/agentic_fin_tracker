@@ -360,63 +360,128 @@ function MonthlyExpenses() {
         <h2 className="page-title">Monthly Expenses</h2>
       </div>
 
-      {/* Month Navigator */}
-      <div className="month-navigator">
-        <button onClick={handlePreviousMonth} className="nav-btn">
-          ← Previous
-        </button>
-        <h3 className="current-month">
-          {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
-          {isCurrentMonth && <span className="current-badge">Current</span>}
-        </h3>
-        <button
-          onClick={handleNextMonth}
-          className="nav-btn"
-          disabled={selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1)}
-        >
-          Next →
-        </button>
+      {/* Modern Month & Year Selector */}
+      <div className="month-year-selector-card">
+        <div className="selector-header">
+          <div className="selector-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <path d="M3 10H21" stroke="currentColor" strokeWidth="2"/>
+              <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h3 className="selector-title">Select Period</h3>
+          {isCurrentMonth && <span className="current-badge">Current Month</span>}
+        </div>
+
+        <div className="selector-controls">
+          <div className="selector-group">
+            <label htmlFor="year-select">Year</label>
+            <select
+              id="year-select"
+              value={selectedYear}
+              onChange={(e) => {
+                const year = parseInt(e.target.value)
+                // Find first available month for this year
+                const monthsInYear = availableMonths.filter(m => m.year === year)
+                const month = monthsInYear.length > 0 ? monthsInYear[0].month : selectedMonth
+                handleMonthChange(year, month)
+              }}
+              className="year-select"
+            >
+              {[...new Set(availableMonths.map(m => m.year))].map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="selector-divider"></div>
+
+          <div className="selector-group selector-group-month">
+            <label htmlFor="month-select">Month</label>
+            <select
+              id="month-select"
+              value={selectedMonth}
+              onChange={(e) => handleMonthChange(selectedYear, parseInt(e.target.value))}
+              className="month-select"
+            >
+              {availableMonths
+                .filter(m => m.year === selectedYear)
+                .map(m => (
+                  <option key={m.month} value={m.month}>
+                    {MONTH_NAMES[m.month - 1]}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="selected-period-display">
+          <span className="period-label">Selected Period:</span>
+          <span className="period-value">{MONTH_NAMES[selectedMonth - 1]} {selectedYear}</span>
+        </div>
+
+        {/* Compact KPI Chips */}
+        <div className="kpi-chips-container">
+          <div className="kpi-chip kpi-income">
+            <div className="kpi-icon">↑</div>
+            <div className="kpi-content">
+              <span className="kpi-label">Income</span>
+              <span className="kpi-value">{formatAmount(incomeTotal)}</span>
+            </div>
+          </div>
+
+          <div className="kpi-chip kpi-expenses">
+            <div className="kpi-icon">↓</div>
+            <div className="kpi-content">
+              <span className="kpi-label">Expenses</span>
+              <span className="kpi-value">{formatAmount(summary.total)}</span>
+            </div>
+          </div>
+
+          <div className={`kpi-chip kpi-net ${incomeTotal - summary.total >= 0 ? 'kpi-positive' : 'kpi-negative'}`}>
+            <div className="kpi-icon">{incomeTotal - summary.total >= 0 ? '✓' : '⚠'}</div>
+            <div className="kpi-content">
+              <span className="kpi-label">Net</span>
+              <span className="kpi-value">{formatAmount(incomeTotal - summary.total)}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Month Selector Dropdown */}
-      <div className="month-selector">
-        <label>Jump to month:</label>
-        <select
-          value={`${selectedYear}-${selectedMonth}`}
-          onChange={(e) => {
-            const [year, month] = e.target.value.split('-')
-            handleMonthChange(parseInt(year), parseInt(month))
-          }}
-          className="month-select"
-        >
-          {availableMonths.map((m) => (
-            <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
-              {MONTH_NAMES[m.month - 1]} {m.year}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="summary-cards">
-        <div className="summary-card">
-          <h4>Total Income</h4>
-          <p className="summary-value" style={{ color: '#10b981' }}>{formatAmount(incomeTotal)}</p>
-          <p className="summary-label">{monthlyIncomes.length} {monthlyIncomes.length === 1 ? 'source' : 'sources'}</p>
+      {/* Payment Account Allocation with Animated Flow */}
+      {accountAllocation.allocations && accountAllocation.allocations.length > 0 && (
+        <div className="account-allocation-flow-section">
+          <div className="flow-section-header">
+            <h3 className="flow-section-title">Payment Allocations</h3>
+            <p className="flow-section-subtitle">Money flow to accounts</p>
+          </div>
+          <div className="allocation-flow-container">
+            {accountAllocation.allocations.map((allocation, index) => (
+              <div key={index} className="allocation-flow-row">
+                <div className="flow-amount">
+                  <span className="amount-value">{formatAmount(allocation.total_amount)}</span>
+                  <span className="amount-label">{allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}</span>
+                </div>
+                <div className="flow-arrow-container">
+                  <div className="flow-arrow">
+                    <div className="arrow-line"></div>
+                    <div className="arrow-head"></div>
+                    <div className="arrow-particles"></div>
+                  </div>
+                </div>
+                <div className="flow-account">
+                  <span className="account-name">{allocation.account_name || 'Unassigned'}</span>
+                  {allocation.owner_name && (
+                    <span className="account-owner">{allocation.owner_name}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="summary-card">
-          <h4>Total Expenses</h4>
-          <p className="summary-value" style={{ color: '#ef4444' }}>{formatAmount(summary.total)}</p>
-          <p className="summary-label">{summary.count} {summary.count === 1 ? 'expense' : 'expenses'}</p>
-        </div>
-        <div className="summary-card">
-          <h4>Net Income</h4>
-          <p className="summary-value" style={{ color: incomeTotal - summary.total >= 0 ? '#10b981' : '#ef4444' }}>
-            {formatAmount(incomeTotal - summary.total)}
-          </p>
-          <p className="summary-label">{incomeTotal - summary.total >= 0 ? 'Surplus' : 'Deficit'}</p>
-        </div>
-      </div>
+      )}
 
       {/* Income Section */}
       <div className="income-section">
@@ -456,7 +521,6 @@ function MonthlyExpenses() {
                   min="0"
                   value={incomeFormData.amount}
                   onChange={(e) => setIncomeFormData({ ...incomeFormData, amount: e.target.value })}
-                  required
                   placeholder="e.g., 5000"
                 />
               </div>
@@ -516,28 +580,6 @@ function MonthlyExpenses() {
         )}
       </div>
 
-      {/* Payment Account Allocation */}
-      {accountAllocation.allocations && accountAllocation.allocations.length > 0 && (
-        <div className="account-allocation-section">
-          <h3>Payment Account Allocation</h3>
-          <div className="allocation-cards">
-            {accountAllocation.allocations.map((allocation, index) => (
-              <div key={index} className="allocation-card">
-                <div className="allocation-header">
-                  <h4>{allocation.account_name || 'Unassigned'}</h4>
-                  {allocation.owner_name && (
-                    <span className="owner-name">{allocation.owner_name}</span>
-                  )}
-                </div>
-                <div className="allocation-amount">{formatAmount(allocation.total_amount)}</div>
-                <div className="allocation-details">
-                  {allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Add Expense Buttons (only for current month) */}
       {isCurrentMonth && !showAddForm && (
@@ -580,7 +622,6 @@ function MonthlyExpenses() {
                   name="amount"
                   value={formData.amount}
                   onChange={handleFormChange}
-                  required
                   step="0.01"
                   min="0"
                   placeholder="0.00"

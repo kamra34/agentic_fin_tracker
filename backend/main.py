@@ -43,9 +43,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def add_timing_header(request: Request, call_next):
     start_time = time.time()
 
-    # Log request start
-    logger.info(f"⏱️  START: {request.method} {request.url.path}")
-
     response = await call_next(request)
 
     # Calculate processing time
@@ -53,12 +50,6 @@ async def add_timing_header(request: Request, call_next):
 
     # Add timing header to response
     response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
-
-    # Log completion with timing
-    if process_time > 1000:  # Warn if over 1 second
-        logger.warning(f"⚠️  SLOW: {request.method} {request.url.path} - {process_time:.2f}ms")
-    else:
-        logger.info(f"✅ DONE: {request.method} {request.url.path} - {process_time:.2f}ms")
 
     return response
 
