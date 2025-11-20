@@ -7,8 +7,9 @@ from app.core.config import settings
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,  # Verify connections before using them
-    pool_size=5,
-    max_overflow=10
+    pool_size=20,  # Increased from 5 to handle more concurrent requests
+    max_overflow=30,  # Increased from 10 to prevent connection exhaustion
+    pool_recycle=3600  # Recycle connections after 1 hour to prevent stale connections
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

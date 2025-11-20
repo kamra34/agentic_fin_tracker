@@ -8,8 +8,8 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    category_type = Column(String(20), nullable=False, default='expense')  # expense, income, saving
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)  # Index for user queries
+    category_type = Column(String(20), nullable=False, default='expense', index=True)  # Index for type filtering
     is_active = Column(Boolean, default=True)
 
     user = relationship("User", back_populates="categories")
@@ -22,7 +22,7 @@ class Subcategory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, index=True)  # Index for category lookups
     is_active = Column(Boolean, default=True)
 
     category = relationship("Category", back_populates="subcategories")

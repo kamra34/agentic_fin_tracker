@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract
 from app.models.expense import Expense
 from app.models.category import Category, Subcategory
@@ -14,25 +14,12 @@ class ExpenseService:
         self.db = db
 
     def _enrich_expense_with_names(self, expense: Expense) -> Expense:
-        """Add category_name, subcategory_name, and account_name attributes to expense object"""
-        if expense.category_id:
-            category = self.db.query(Category).filter(Category.id == expense.category_id).first()
-            expense.category_name = category.name if category else None
-        else:
-            expense.category_name = None
-
-        if expense.subcategory_id:
-            subcategory = self.db.query(Subcategory).filter(Subcategory.id == expense.subcategory_id).first()
-            expense.subcategory_name = subcategory.name if subcategory else None
-        else:
-            expense.subcategory_name = None
-
-        if expense.account_id:
-            account = self.db.query(Account).filter(Account.id == expense.account_id).first()
-            expense.account_name = account.name if account else None
-        else:
-            expense.account_name = None
-
+        """Add category_name, subcategory_name, and account_name attributes to expense object
+        Note: This now uses eager-loaded relationships instead of separate queries"""
+        # Access the relationships directly - they're already loaded via joinedload
+        expense.category_name = expense.category_obj.name if expense.category_obj else None
+        expense.subcategory_name = expense.subcategory_obj.name if expense.subcategory_obj else None
+        expense.account_name = expense.account.name if expense.account else None
         return expense
 
     def create_expense(self, expense: ExpenseCreate, user_id: int) -> Expense:
@@ -54,7 +41,11 @@ class ExpenseService:
         status: Optional[bool] = None
     ) -> List[Expense]:
         """Get expenses with optional filters"""
-        query = self.db.query(Expense).filter(Expense.user_id == user_id)
+        query = self.db.query(Expense).options(
+            joinedload(Expense.category_obj),
+            joinedload(Expense.subcategory_obj),
+            joinedload(Expense.account)
+        ).filter(Expense.user_id == user_id)
 
         if category:
             query = query.filter(Expense.category == category)
@@ -73,7 +64,11 @@ class ExpenseService:
 
     def get_expense_by_id(self, expense_id: int, user_id: int) -> Optional[Expense]:
         """Get a specific expense by ID for a user"""
-        expense = self.db.query(Expense).filter(
+        expense = self.db.query(Expense).options(
+            joinedload(Expense.category_obj),
+            joinedload(Expense.subcategory_obj),
+            joinedload(Expense.account)
+        ).filter(
             Expense.id == expense_id,
             Expense.user_id == user_id
         ).first()
@@ -157,7 +152,11 @@ class ExpenseService:
         start_date = date(year, month, 1)
         end_date = date(year, month, last_day)
 
-        expenses = self.db.query(Expense).filter(
+        expenses = self.db.query(Expense).options(
+            joinedload(Expense.category_obj),
+            joinedload(Expense.subcategory_obj),
+            joinedload(Expense.account)
+        ).filter(
             Expense.user_id == user_id,
             Expense.date >= start_date,
             Expense.date <= end_date
@@ -270,17 +269,19 @@ class ExpenseService:
         start_date = date(year, month, 1)
         end_date = date(year, month, last_day)
 
-        # Get expenses grouped by account
+        # Get expenses grouped by account with account details in one query
         result = self.db.query(
             Expense.account_id,
+            Account.name,
+            Account.owner_name,
             func.sum(Expense.amount).label('total_amount'),
             func.count(Expense.id).label('expense_count')
-        ).filter(
+        ).outerjoin(Account, Expense.account_id == Account.id).filter(
             Expense.user_id == user_id,
             Expense.date >= start_date,
             Expense.date <= end_date,
             Expense.status == True
-        ).group_by(Expense.account_id).all()
+        ).group_by(Expense.account_id, Account.name, Account.owner_name).all()
 
         # Build allocations with account details
         allocations = []
@@ -291,11 +292,10 @@ class ExpenseService:
             total_expenses += total
 
             if row.account_id:
-                account = self.db.query(Account).filter(Account.id == row.account_id).first()
                 allocations.append({
                     'account_id': row.account_id,
-                    'account_name': account.name if account else 'Unknown',
-                    'owner_name': account.owner_name if account else 'Unknown',
+                    'account_name': row.name or 'Unknown',
+                    'owner_name': row.owner_name or 'Unknown',
                     'total_amount': total,
                     'expense_count': row.expense_count
                 })
