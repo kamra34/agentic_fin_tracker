@@ -4,9 +4,13 @@ from typing import List, Optional
 from datetime import date
 from app.core.database import get_db
 from app.core.dependencies import get_current_active_user
-from app.models.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
+from app.models.schemas import (
+    ExpenseCreate, ExpenseUpdate, ExpenseResponse, MonthlyAccountAllocation,
+    ExpenseTemplateCreate, ExpenseTemplateUpdate, ExpenseTemplateResponse
+)
 from app.models.user import User
 from app.services.expense_service import ExpenseService
+from app.services.expense_template_service import ExpenseTemplateService
 
 router = APIRouter()
 
@@ -73,6 +77,85 @@ async def get_subcategories(
     service = ExpenseService(db)
     return service.get_subcategories(current_user.id, category)
 
+
+# ========== EXPENSE TEMPLATE ENDPOINTS ==========
+# NOTE: These must come BEFORE /{expense_id} route to avoid path conflicts
+
+@router.get("/templates", response_model=List[ExpenseTemplateResponse])
+async def get_expense_templates(
+    include_inactive: bool = Query(False),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all expense templates (recurring expenses)"""
+    service = ExpenseTemplateService(db)
+    templates = service.get_templates_with_names(current_user.id, include_inactive)
+    return templates
+
+
+@router.post("/templates", response_model=ExpenseTemplateResponse, status_code=status.HTTP_201_CREATED)
+async def create_expense_template(
+    template: ExpenseTemplateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new expense template (recurring expense)"""
+    service = ExpenseTemplateService(db)
+    return service.create_template(template, current_user.id)
+
+
+@router.get("/templates/{template_id}", response_model=ExpenseTemplateResponse)
+async def get_expense_template(
+    template_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific expense template"""
+    service = ExpenseTemplateService(db)
+    template = service.get_template_by_id(template_id, current_user.id)
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense template not found"
+        )
+    return template
+
+
+@router.put("/templates/{template_id}", response_model=ExpenseTemplateResponse)
+async def update_expense_template(
+    template_id: int,
+    template_update: ExpenseTemplateUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update an expense template"""
+    service = ExpenseTemplateService(db)
+    updated = service.update_template(template_id, current_user.id, template_update)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense template not found"
+        )
+    return updated
+
+
+@router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_expense_template(
+    template_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an expense template (soft delete)"""
+    service = ExpenseTemplateService(db)
+    success = service.delete_template(template_id, current_user.id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense template not found"
+        )
+
+
+# ========== INDIVIDUAL EXPENSE ENDPOINTS ==========
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 async def get_expense(
@@ -168,3 +251,38 @@ async def get_categories_structured(
     """Get categories with their subcategories and statistics"""
     service = ExpenseService(db)
     return service.get_categories_with_subcategories(current_user.id)
+
+
+@router.get("/monthly/account-allocation", response_model=MonthlyAccountAllocation)
+async def get_monthly_account_allocation(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get monthly expenses grouped by payment account"""
+    service = ExpenseService(db)
+    return service.get_monthly_account_allocation(current_user.id, year, month)
+
+
+# ========== GENERATE FROM TEMPLATES ==========
+
+@router.post("/generate/{year}/{month}", response_model=List[ExpenseResponse])
+async def generate_monthly_expenses(
+    year: int,
+    month: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Generate monthly expenses from active templates"""
+    service = ExpenseTemplateService(db)
+    created_expenses = service.generate_monthly_expenses(current_user.id, year, month)
+
+    # Convert to response format with names
+    expense_service = ExpenseService(db)
+    response_expenses = []
+    for expense in created_expenses:
+        response = expense_service.get_expense_by_id(expense.id, current_user.id)
+        response_expenses.append(response)
+
+    return response_expenses

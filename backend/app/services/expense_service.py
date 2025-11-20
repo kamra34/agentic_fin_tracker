@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from app.models.expense import Expense
 from app.models.category import Category, Subcategory
+from app.models.account import Account
 from app.models.schemas import ExpenseCreate, ExpenseUpdate
 from typing import List, Optional, Dict
 from datetime import date, datetime
@@ -13,7 +14,7 @@ class ExpenseService:
         self.db = db
 
     def _enrich_expense_with_names(self, expense: Expense) -> Expense:
-        """Add category_name and subcategory_name attributes to expense object"""
+        """Add category_name, subcategory_name, and account_name attributes to expense object"""
         if expense.category_id:
             category = self.db.query(Category).filter(Category.id == expense.category_id).first()
             expense.category_name = category.name if category else None
@@ -25,6 +26,12 @@ class ExpenseService:
             expense.subcategory_name = subcategory.name if subcategory else None
         else:
             expense.subcategory_name = None
+
+        if expense.account_id:
+            account = self.db.query(Account).filter(Account.id == expense.account_id).first()
+            expense.account_name = account.name if account else None
+        else:
+            expense.account_name = None
 
         return expense
 
@@ -256,3 +263,55 @@ class ExpenseService:
                 })
 
         return list(categories_dict.values())
+
+    def get_monthly_account_allocation(self, user_id: int, year: int, month: int) -> Dict:
+        """Get monthly expenses grouped by payment account"""
+        _, last_day = monthrange(year, month)
+        start_date = date(year, month, 1)
+        end_date = date(year, month, last_day)
+
+        # Get expenses grouped by account
+        result = self.db.query(
+            Expense.account_id,
+            func.sum(Expense.amount).label('total_amount'),
+            func.count(Expense.id).label('expense_count')
+        ).filter(
+            Expense.user_id == user_id,
+            Expense.date >= start_date,
+            Expense.date <= end_date,
+            Expense.status == True
+        ).group_by(Expense.account_id).all()
+
+        # Build allocations with account details
+        allocations = []
+        total_expenses = 0
+
+        for row in result:
+            total = float(row.total_amount or 0)
+            total_expenses += total
+
+            if row.account_id:
+                account = self.db.query(Account).filter(Account.id == row.account_id).first()
+                allocations.append({
+                    'account_id': row.account_id,
+                    'account_name': account.name if account else 'Unknown',
+                    'owner_name': account.owner_name if account else 'Unknown',
+                    'total_amount': total,
+                    'expense_count': row.expense_count
+                })
+            else:
+                # Expenses without an account
+                allocations.append({
+                    'account_id': None,
+                    'account_name': 'Unassigned',
+                    'owner_name': None,
+                    'total_amount': total,
+                    'expense_count': row.expense_count
+                })
+
+        return {
+            'year': year,
+            'month': month,
+            'total_expenses': total_expenses,
+            'allocations': allocations
+        }

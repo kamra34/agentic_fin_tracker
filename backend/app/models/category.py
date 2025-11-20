@@ -9,6 +9,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category_type = Column(String(20), nullable=False, default='expense')  # expense, income, saving
     is_active = Column(Boolean, default=True)
 
     user = relationship("User", back_populates="categories")

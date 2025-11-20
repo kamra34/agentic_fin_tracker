@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.core.config import settings
-from app.api import auth, expenses, dashboard, categories
-from app.models import user, expense, account, category  # Import all models for SQLAlchemy
+from app.api import auth, expenses, dashboard, categories, accounts, incomes
+from app.models import user, expense, account, category, income  # Import all models for SQLAlchemy
 import json
 
 app = FastAPI(
@@ -37,8 +37,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include routers
@@ -46,6 +47,8 @@ app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(expenses.router, prefix="/api/expenses", tags=["expenses"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(categories.router)
+app.include_router(accounts.router)
+app.include_router(incomes.router)
 
 
 @app.get("/")
@@ -60,3 +63,4 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+

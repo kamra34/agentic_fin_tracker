@@ -1,10 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Transactions from './pages/Transactions'
-import Categories from './pages/Categories'
 import Profile from './pages/Profile'
 import MonthlyExpenses from './pages/MonthlyExpenses'
+import Management from './pages/Management'
 import Navigation from './components/Navigation'
 import { CurrencyProvider } from './context/CurrencyContext'
 import './App.css'
@@ -35,8 +34,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/monthly" element={<MonthlyExpenses />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/categories" element={<Categories />} />
+                      <Route path="/management" element={<Management />} />
                       <Route path="/profile" element={<Profile />} />
                     </Routes>
                   </main>

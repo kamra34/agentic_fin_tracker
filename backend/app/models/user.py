@@ -20,3 +20,6 @@ class User(Base):
     expenses = relationship("Expense", back_populates="user")
     accounts = relationship("Account", back_populates="user")
     categories = relationship("Category", back_populates="user")
+    income_templates = relationship("IncomeTemplate", back_populates="user")
+    monthly_incomes = relationship("MonthlyIncome", back_populates="user")
+    expense_templates = relationship("ExpenseTemplate", back_populates="user")

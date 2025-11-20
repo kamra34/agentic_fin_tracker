@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from app.core.database import Base
 
 
@@ -26,3 +27,25 @@ class Expense(Base):
     account = relationship("Account", back_populates="expenses")
     category_obj = relationship("Category", back_populates="expenses")
     subcategory_obj = relationship("Subcategory", back_populates="expenses")
+
+
+class ExpenseTemplate(Base):
+    """Recurring expenses (e.g., Rent, Internet, Gym Membership)"""
+    __tablename__ = "expense_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    amount = Column(Float, nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    subcategory_id = Column(Integer, ForeignKey("subcategories.id"), nullable=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="expense_templates")
+    category = relationship("Category")
+    subcategory = relationship("Subcategory")
+    account = relationship("Account")

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { getCategoriesStructured } from '../services/api'
 import { useCurrency } from '../context/CurrencyContext'
 import './Categories.css'
@@ -73,6 +74,9 @@ function Categories() {
           <span className="stat-badge">
             {categories.reduce((sum, cat) => sum + cat.total_count, 0)} Total Expenses
           </span>
+          <Link to="/categories/manage" className="btn-manage">
+            ⚙️ Manage Categories
+          </Link>
         </div>
       </div>
 

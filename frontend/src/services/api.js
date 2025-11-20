@@ -158,10 +158,296 @@ export async function getCategoriesStructured() {
   return handleResponse(response)
 }
 
+export async function getMonthlyAccountAllocation(year, month) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/monthly/account-allocation?year=${year}&month=${month}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// New Category Management API
+export async function getCategories(includeInactive = false) {
+  const params = includeInactive ? '?include_inactive=true' : ''
+  const response = await fetch(`${API_BASE_URL}/api/categories/${params}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getCategoriesWithStats() {
+  const response = await fetch(`${API_BASE_URL}/api/categories/with-stats`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getCategory(categoryId) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createCategory(data) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateCategory(categoryId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteCategory(categoryId) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function mergeCategories(sourceId, targetId) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/merge?source_id=${sourceId}&target_id=${targetId}`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getSubcategories(categoryId) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}/subcategories`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createSubcategory(data) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/subcategories`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateSubcategory(subcategoryId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/subcategories/${subcategoryId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteSubcategory(subcategoryId) {
+  const response = await fetch(`${API_BASE_URL}/api/categories/subcategories/${subcategoryId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// Accounts API
+export async function getAccounts() {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getAccountsWithStats() {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/with-stats`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getAccount(accountId) {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createAccount(data) {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateAccount(accountId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteAccount(accountId) {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// Income Templates API
+export async function getIncomeTemplates(includeInactive = false) {
+  const params = includeInactive ? '?include_inactive=true' : ''
+  const response = await fetch(`${API_BASE_URL}/api/incomes/templates${params}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getIncomeTemplate(templateId) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/templates/${templateId}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createIncomeTemplate(data) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/templates`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateIncomeTemplate(templateId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/templates/${templateId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteIncomeTemplate(templateId) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/templates/${templateId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// Monthly Incomes API
+export async function getMonthlyIncomes(month = null) {
+  const params = month ? `?month=${month}` : ''
+  const response = await fetch(`${API_BASE_URL}/api/incomes/monthly${params}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function generateMonthlyIncomes(month) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/generate/${month}`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getMonthlyIncomeTotal(month) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/total/${month}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createMonthlyIncome(data) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/monthly`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateMonthlyIncome(incomeId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/monthly/${incomeId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteMonthlyIncome(incomeId) {
+  const response = await fetch(`${API_BASE_URL}/api/incomes/monthly/${incomeId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// Expense Templates API
+export async function getExpenseTemplates(includeInactive = false) {
+  const params = includeInactive ? '?include_inactive=true' : ''
+  const response = await fetch(`${API_BASE_URL}/api/expenses/templates${params}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getExpenseTemplate(templateId) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/templates/${templateId}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createExpenseTemplate(data) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/templates`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateExpenseTemplate(templateId, data) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/templates/${templateId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteExpenseTemplate(templateId) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/templates/${templateId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function generateExpensesFromTemplates(year, month) {
+  const response = await fetch(`${API_BASE_URL}/api/expenses/generate/${year}/${month}`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
 // Legacy aliases for compatibility
 export const getTransactions = getExpenses
 export const getTransaction = getExpense
 export const createTransaction = createExpense
 export const updateTransaction = updateExpense
 export const deleteTransaction = deleteExpense
-export const getCategories = getExpenseCategories

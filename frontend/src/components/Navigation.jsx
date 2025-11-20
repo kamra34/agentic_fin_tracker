@@ -29,15 +29,15 @@ function Navigation() {
               to="/monthly"
               className={location.pathname === '/monthly' ? 'active' : ''}
             >
-              Monthly
+              Monthly Expenses
             </Link>
           </li>
           <li>
             <Link
-              to="/categories"
-              className={location.pathname === '/categories' ? 'active' : ''}
+              to="/management"
+              className={location.pathname === '/management' ? 'active' : ''}
             >
-              Categories
+              Management
             </Link>
           </li>
           <li>

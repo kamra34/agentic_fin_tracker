@@ -39,9 +39,18 @@ export function CurrencyProvider({ children }) {
   }
 
   const formatAmount = (amount) => {
-    if (amount === null || amount === undefined) return `0.00 ${symbol}`
+    if (amount === null || amount === undefined) return `0 ${symbol}`
 
-    const formattedNumber = parseFloat(amount).toFixed(2)
+    const numAmount = parseFloat(amount)
+
+    // Use Intl.NumberFormat for proper locale-aware formatting
+    const formatter = new Intl.NumberFormat('sv-SE', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+      useGrouping: true
+    })
+
+    const formattedNumber = formatter.format(numAmount)
 
     // For Swedish Krona, put symbol after the number
     if (currency === 'SEK') {

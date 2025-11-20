@@ -6,8 +6,17 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
-  getExpenseCategories,
-  getExpenseSubcategories
+  getCategories,
+  getSubcategories,
+  getAccounts,
+  getMonthlyAccountAllocation,
+  getMonthlyIncomes,
+  generateMonthlyIncomes,
+  getMonthlyIncomeTotal,
+  createMonthlyIncome,
+  updateMonthlyIncome,
+  deleteMonthlyIncome,
+  generateExpensesFromTemplates
 } from '../services/api'
 import { useCurrency } from '../context/CurrencyContext'
 import './MonthlyExpenses.css'
@@ -27,15 +36,27 @@ function MonthlyExpenses() {
   const [availableMonths, setAvailableMonths] = useState([])
   const [categories, setCategories] = useState([])
   const [subcategories, setSubcategories] = useState([])
+  const [accounts, setAccounts] = useState([])
+  const [accountAllocation, setAccountAllocation] = useState({ allocations: [] })
+  const [monthlyIncomes, setMonthlyIncomes] = useState([])
+  const [incomeTotal, setIncomeTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showIncomeForm, setShowIncomeForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
+  const [editingIncome, setEditingIncome] = useState(null)
   const [formData, setFormData] = useState({
     date: '',
-    category: '',
-    subcategory: '',
+    category_id: '',
+    subcategory_id: '',
     amount: '',
-    status: true
+    status: true,
+    account_id: ''
+  })
+  const [incomeFormData, setIncomeFormData] = useState({
+    source_name: '',
+    amount: '',
+    description: ''
   })
 
   const isCurrentMonth = selectedYear === currentDate.getFullYear() &&
@@ -53,12 +74,14 @@ function MonthlyExpenses() {
 
   const loadInitialData = async () => {
     try {
-      const [months, cats] = await Promise.all([
+      const [months, cats, accts] = await Promise.all([
         getAvailableMonths(),
-        getExpenseCategories()
+        getCategories(),
+        getAccounts()
       ])
       setAvailableMonths(months)
       setCategories(cats)
+      setAccounts(accts)
     } catch (error) {
       console.error('Error loading initial data:', error)
     }
@@ -67,12 +90,19 @@ function MonthlyExpenses() {
   const loadMonthlyData = async () => {
     try {
       setLoading(true)
-      const [expensesData, summaryData] = await Promise.all([
+      const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+      const [expensesData, summaryData, allocationData, incomesData, totalData] = await Promise.all([
         getMonthlyExpenses(selectedYear, selectedMonth),
-        getMonthlySummary(selectedYear, selectedMonth)
+        getMonthlySummary(selectedYear, selectedMonth),
+        getMonthlyAccountAllocation(selectedYear, selectedMonth),
+        getMonthlyIncomes(monthStr),
+        getMonthlyIncomeTotal(monthStr)
       ])
       setExpenses(expensesData)
       setSummary(summaryData)
+      setAccountAllocation(allocationData)
+      setMonthlyIncomes(incomesData)
+      setIncomeTotal(totalData.total || 0)
     } catch (error) {
       console.error('Error loading monthly data:', error)
     } finally {
@@ -120,10 +150,15 @@ function MonthlyExpenses() {
     setFormData(newFormData)
 
     // Load subcategories when category changes
-    if (name === 'category' && value) {
+    if (name === 'category_id' && value) {
       try {
-        const subs = await getExpenseSubcategories(value)
-        setSubcategories(subs)
+        const category = categories.find(c => c.id === parseInt(value))
+        if (category && category.subcategories) {
+          setSubcategories(category.subcategories)
+        } else {
+          const subs = await getSubcategories(value)
+          setSubcategories(subs)
+        }
       } catch (error) {
         console.error('Error loading subcategories:', error)
       }
@@ -132,12 +167,21 @@ function MonthlyExpenses() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Validate that payment account is selected
+    if (!formData.account_id) {
+      alert('Please select a payment account')
+      return
+    }
+
     try {
       const expenseData = {
-        ...formData,
         date: formData.date || getDefaultDate(),
+        category_id: parseInt(formData.category_id),
+        subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
         amount: parseFloat(formData.amount),
-        subcategory: formData.subcategory || null
+        status: formData.status,
+        account_id: parseInt(formData.account_id)
       }
 
       if (editingExpense) {
@@ -163,15 +207,21 @@ function MonthlyExpenses() {
     setEditingExpense(expense)
     setFormData({
       date: expense.date,
-      category: expense.category,
-      subcategory: expense.subcategory || '',
+      category_id: expense.category_id?.toString() || '',
+      subcategory_id: expense.subcategory_id?.toString() || '',
       amount: expense.amount.toString(),
-      status: expense.status
+      status: expense.status,
+      account_id: expense.account_id?.toString() || ''
     })
     setShowAddForm(true)
     // Load subcategories for the category
-    if (expense.category) {
-      getExpenseSubcategories(expense.category).then(setSubcategories)
+    if (expense.category_id) {
+      const category = categories.find(c => c.id === expense.category_id)
+      if (category && category.subcategories) {
+        setSubcategories(category.subcategories)
+      } else {
+        getSubcategories(expense.category_id).then(setSubcategories)
+      }
     }
   }
 
@@ -196,10 +246,11 @@ function MonthlyExpenses() {
   const resetForm = () => {
     setFormData({
       date: '',
-      category: '',
-      subcategory: '',
+      category_id: '',
+      subcategory_id: '',
       amount: '',
-      status: true
+      status: true,
+      account_id: ''
     })
     setSubcategories([])
   }
@@ -209,6 +260,94 @@ function MonthlyExpenses() {
     const month = String(selectedMonth).padStart(2, '0')
     const day = String(currentDate.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  }
+
+  // Income handlers
+  const handleGenerateIncome = async () => {
+    try {
+      const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+      await generateMonthlyIncomes(monthStr)
+      await loadMonthlyData()
+      alert('Income generated successfully from templates!')
+    } catch (error) {
+      console.error('Error generating income:', error)
+      alert('Failed to generate income: ' + (error.message || 'Unknown error'))
+    }
+  }
+
+  const handleAddOneTimeIncome = () => {
+    setEditingIncome(null)
+    setIncomeFormData({ source_name: '', amount: '', description: '' })
+    setShowIncomeForm(true)
+  }
+
+  const handleEditIncome = (income) => {
+    setEditingIncome(income)
+    setIncomeFormData({
+      source_name: income.source_name,
+      amount: income.amount.toString(),
+      description: income.description || ''
+    })
+    setShowIncomeForm(true)
+  }
+
+  const handleIncomeSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+      if (editingIncome) {
+        await updateMonthlyIncome(editingIncome.id, {
+          source_name: incomeFormData.source_name,
+          amount: parseFloat(incomeFormData.amount),
+          description: incomeFormData.description
+        })
+      } else {
+        await createMonthlyIncome({
+          month: monthStr,
+          source_name: incomeFormData.source_name,
+          amount: parseFloat(incomeFormData.amount),
+          is_one_time: true,
+          description: incomeFormData.description
+        })
+      }
+      setShowIncomeForm(false)
+      setEditingIncome(null)
+      setIncomeFormData({ source_name: '', amount: '', description: '' })
+      await loadMonthlyData()
+    } catch (error) {
+      console.error('Error saving income:', error)
+      alert('Failed to save income: ' + (error.message || 'Unknown error'))
+    }
+  }
+
+  const handleDeleteIncome = async (incomeId) => {
+    if (window.confirm('Are you sure you want to delete this income entry?')) {
+      try {
+        await deleteMonthlyIncome(incomeId)
+        await loadMonthlyData()
+      } catch (error) {
+        console.error('Error deleting income:', error)
+        alert('Failed to delete income')
+      }
+    }
+  }
+
+  const handleCancelIncomeForm = () => {
+    setShowIncomeForm(false)
+    setEditingIncome(null)
+    setIncomeFormData({ source_name: '', amount: '', description: '' })
+  }
+
+  // Expense template handler
+  const handleGenerateExpenses = async () => {
+    try {
+      await generateExpensesFromTemplates(selectedYear, selectedMonth)
+      await loadMonthlyData()
+      alert('Expenses generated successfully from templates!')
+    } catch (error) {
+      console.error('Error generating expenses:', error)
+      alert('Failed to generate expenses: ' + (error.message || 'Unknown error'))
+    }
   }
 
   if (loading && expenses.length === 0) {
@@ -261,24 +400,155 @@ function MonthlyExpenses() {
       {/* Summary Stats */}
       <div className="summary-cards">
         <div className="summary-card">
+          <h4>Total Income</h4>
+          <p className="summary-value" style={{ color: '#10b981' }}>{formatAmount(incomeTotal)}</p>
+          <p className="summary-label">{monthlyIncomes.length} {monthlyIncomes.length === 1 ? 'source' : 'sources'}</p>
+        </div>
+        <div className="summary-card">
           <h4>Total Expenses</h4>
-          <p className="summary-value">{formatAmount(summary.total)}</p>
+          <p className="summary-value" style={{ color: '#ef4444' }}>{formatAmount(summary.total)}</p>
+          <p className="summary-label">{summary.count} {summary.count === 1 ? 'expense' : 'expenses'}</p>
         </div>
         <div className="summary-card">
-          <h4>Count</h4>
-          <p className="summary-value">{summary.count}</p>
-        </div>
-        <div className="summary-card">
-          <h4>Categories</h4>
-          <p className="summary-value">{Object.keys(summary.by_category || {}).length}</p>
+          <h4>Net Income</h4>
+          <p className="summary-value" style={{ color: incomeTotal - summary.total >= 0 ? '#10b981' : '#ef4444' }}>
+            {formatAmount(incomeTotal - summary.total)}
+          </p>
+          <p className="summary-label">{incomeTotal - summary.total >= 0 ? 'Surplus' : 'Deficit'}</p>
         </div>
       </div>
 
-      {/* Add Expense Button (only for current month) */}
+      {/* Income Section */}
+      <div className="income-section">
+        <div className="section-header">
+          <h3>Income for {MONTH_NAMES[selectedMonth - 1]} {selectedYear}</h3>
+          <div className="income-actions">
+            <button onClick={handleGenerateIncome} className="btn-generate">
+              Generate from Templates
+            </button>
+            <button onClick={handleAddOneTimeIncome} className="btn-add-income">
+              + Add One-Time Income
+            </button>
+          </div>
+        </div>
+
+        {showIncomeForm && (
+          <div className="income-form-card">
+            <h4>{editingIncome ? 'Edit Income' : 'Add One-Time Income'}</h4>
+            <form onSubmit={handleIncomeSubmit} className="income-form">
+              <div className="form-group">
+                <label htmlFor="income-source">Source Name</label>
+                <input
+                  type="text"
+                  id="income-source"
+                  value={incomeFormData.source_name}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, source_name: e.target.value })}
+                  required
+                  placeholder="e.g., Bonus, Freelance Project"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="income-amount">Amount</label>
+                <input
+                  type="number"
+                  id="income-amount"
+                  step="0.01"
+                  min="0"
+                  value={incomeFormData.amount}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, amount: e.target.value })}
+                  required
+                  placeholder="e.g., 5000"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="income-description">Description (Optional)</label>
+                <input
+                  type="text"
+                  id="income-description"
+                  value={incomeFormData.description}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, description: e.target.value })}
+                  placeholder="Additional details"
+                />
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="btn-submit">
+                  {editingIncome ? 'Update' : 'Add'} Income
+                </button>
+                <button type="button" onClick={handleCancelIncomeForm} className="btn-cancel">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {monthlyIncomes.length > 0 ? (
+          <div className="income-list">
+            {monthlyIncomes.map((income) => (
+              <div key={income.id} className="income-item">
+                <div className="income-info">
+                  <div className="income-source">
+                    {income.source_name}
+                    {income.is_one_time && <span className="one-time-badge">One-time</span>}
+                    {!income.is_one_time && <span className="recurring-badge">Recurring</span>}
+                  </div>
+                  {income.description && (
+                    <div className="income-description">{income.description}</div>
+                  )}
+                </div>
+                <div className="income-amount">{formatAmount(income.amount)}</div>
+                <div className="income-actions">
+                  <button onClick={() => handleEditIncome(income)} className="btn-edit-small">
+                    Edit
+                  </button>
+                  <button onClick={() => handleDeleteIncome(income.id)} className="btn-delete-small">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No income recorded for this month.</p>
+            <p>Click "Generate from Templates" to create income from your recurring sources, or add one-time income manually.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Payment Account Allocation */}
+      {accountAllocation.allocations && accountAllocation.allocations.length > 0 && (
+        <div className="account-allocation-section">
+          <h3>Payment Account Allocation</h3>
+          <div className="allocation-cards">
+            {accountAllocation.allocations.map((allocation, index) => (
+              <div key={index} className="allocation-card">
+                <div className="allocation-header">
+                  <h4>{allocation.account_name || 'Unassigned'}</h4>
+                  {allocation.owner_name && (
+                    <span className="owner-name">{allocation.owner_name}</span>
+                  )}
+                </div>
+                <div className="allocation-amount">{formatAmount(allocation.total_amount)}</div>
+                <div className="allocation-details">
+                  {allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Expense Buttons (only for current month) */}
       {isCurrentMonth && !showAddForm && (
-        <button onClick={() => setShowAddForm(true)} className="btn-add-expense">
-          + Add Expense
-        </button>
+        <div className="expense-actions">
+          <button onClick={handleGenerateExpenses} className="btn-generate">
+            Generate from Templates
+          </button>
+          <button onClick={() => setShowAddForm(true)} className="btn-add-expense">
+            + Add Expense
+          </button>
+        </div>
       )}
 
       {/* Add/Edit Expense Form */}
@@ -321,43 +591,61 @@ function MonthlyExpenses() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="category">Category</label>
-                <input
-                  type="text"
-                  id="category"
-                  name="category"
-                  value={formData.category}
+                <label htmlFor="category_id">Category</label>
+                <select
+                  id="category_id"
+                  name="category_id"
+                  value={formData.category_id}
                   onChange={handleFormChange}
                   required
-                  list="categories-list"
-                  placeholder="Enter or select category"
                   className="form-input"
-                />
-                <datalist id="categories-list">
+                >
+                  <option value="">Select a category</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat} />
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               <div className="form-group">
-                <label htmlFor="subcategory">Subcategory (Optional)</label>
-                <input
-                  type="text"
-                  id="subcategory"
-                  name="subcategory"
-                  value={formData.subcategory}
+                <label htmlFor="subcategory_id">Subcategory (Optional)</label>
+                <select
+                  id="subcategory_id"
+                  name="subcategory_id"
+                  value={formData.subcategory_id}
                   onChange={handleFormChange}
-                  list="subcategories-list"
-                  placeholder="Enter or select subcategory"
                   className="form-input"
-                />
-                <datalist id="subcategories-list">
+                  disabled={!formData.category_id || subcategories.length === 0}
+                >
+                  <option value="">Select a subcategory</option>
                   {subcategories.map((sub) => (
-                    <option key={sub} value={sub} />
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="account_id">Payment Account</label>
+              <select
+                id="account_id"
+                name="account_id"
+                value={formData.account_id}
+                onChange={handleFormChange}
+                required
+                className="form-input"
+              >
+                <option value="">Select a payment account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.owner_name})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
@@ -396,15 +684,17 @@ function MonthlyExpenses() {
               <div className="col-category">Category</div>
               <div className="col-subcategory">Subcategory</div>
               <div className="col-amount">Amount</div>
+              <div className="col-account">Payment Account</div>
               <div className="col-status">Status</div>
               {isCurrentMonth && <div className="col-actions">Actions</div>}
             </div>
             {expenses.map((expense) => (
               <div key={expense.id} className="table-row">
                 <div className="col-date">{expense.date}</div>
-                <div className="col-category">{expense.category}</div>
-                <div className="col-subcategory">{expense.subcategory || '-'}</div>
+                <div className="col-category">{expense.category_name || expense.category || '-'}</div>
+                <div className="col-subcategory">{expense.subcategory_name || expense.subcategory || '-'}</div>
                 <div className="col-amount">{formatAmount(expense.amount)}</div>
+                <div className="col-account">{expense.account_name || '-'}</div>
                 <div className="col-status">
                   <span className={`status-badge ${expense.status ? 'active' : 'inactive'}`}>
                     {expense.status ? 'Active' : 'Inactive'}
