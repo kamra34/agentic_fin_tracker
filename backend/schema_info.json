@@ -1,0 +1,148 @@
+{
+  "expenses": {
+    "table_name": "expenses",
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "max_length": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "date",
+        "data_type": "date",
+        "udt_name": "date",
+        "max_length": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "category",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "max_length": 50,
+        "nullable": false,
+        "default": "NULL::character varying"
+      },
+      {
+        "name": "subcategory",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "max_length": 50,
+        "nullable": true,
+        "default": "NULL::character varying"
+      },
+      {
+        "name": "amount",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "max_length": null,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "user_id",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "max_length": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "max_length": null,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "account_id",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "max_length": null,
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "row_count": 562
+  },
+  "users": {
+    "table_name": "users",
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "max_length": null,
+        "nullable": false,
+        "default": "nextval('users_id_seq'::regclass)"
+      },
+      {
+        "name": "email",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "max_length": 255,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "hashed_password",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "max_length": 255,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "full_name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "max_length": 255,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "is_active",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "max_length": null,
+        "nullable": true,
+        "default": "true"
+      },
+      {
+        "name": "is_superuser",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "max_length": null,
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "max_length": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "max_length": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "row_count": 1
+  }
+}
