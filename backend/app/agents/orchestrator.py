@@ -13,6 +13,9 @@ class OrchestratorAgent(BaseAgent):
     """
 
     def __init__(self, data_service: ChatDataService):
+        # Event callback for SSE streaming
+        self.on_agent_event = None
+
         # Get user profile IMMEDIATELY to provide context
         user_profile = data_service.get_user_profile()
 
@@ -137,16 +140,35 @@ When invoking agents:
             }
         ]
 
+    def _emit_event(self, event_type: str, agent_name: str, data: dict = None):
+        """Emit an event for SSE streaming if callback is set"""
+        if self.on_agent_event:
+            self.on_agent_event(event_type, agent_name, data)
+
     def execute_function(self, function_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute agent consultation"""
         query = arguments.get("query", "")
 
         if function_name == "consult_sql_analyst":
+            # Emit agent start event
+            self._emit_event("agent_start", "SQL Analyst", {"query": query})
+
             response = self.sql_analyst.chat(query)
+
+            # Emit agent complete event
+            self._emit_event("agent_complete", "SQL Analyst", {"response": response})
+
             return {"agent": "SQL Analyst", "response": response}
 
         elif function_name == "consult_financial_advisor":
+            # Emit agent start event
+            self._emit_event("agent_start", "Financial Advisor", {"query": query})
+
             response = self.financial_advisor.chat(query)
+
+            # Emit agent complete event
+            self._emit_event("agent_complete", "Financial Advisor", {"response": response})
+
             return {"agent": "Financial Advisor", "response": response}
 
         else:
@@ -220,6 +242,9 @@ When invoking agents:
                 # No more function calls, return the final response
                 final_response = assistant_message.content
                 self.add_message("assistant", final_response)
+
+                # Emit orchestrator complete event
+                self._emit_event("agent_complete", "Orchestrator", {"response": final_response})
 
                 return {
                     "response": final_response,

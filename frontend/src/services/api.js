@@ -626,6 +626,59 @@ export async function sendChatMessage(message) {
   return handleResponse(response)
 }
 
+export async function streamChatMessage(message, onEvent) {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    },
+    body: JSON.stringify({ message })
+  })
+
+  if (response.status === 401) {
+    localStorage.removeItem('token')
+    window.location.href = '/login'
+    throw new Error('Unauthorized. Please login again.')
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'An error occurred' }))
+    throw new Error(error.detail || 'An error occurred')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) break
+
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6)
+          if (data.trim()) {
+            try {
+              const event = JSON.parse(data)
+              onEvent(event)
+            } catch (e) {
+              console.error('Error parsing SSE event:', e)
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
 export async function getChatHealth() {
   const response = await timedFetch(`${API_BASE_URL}/api/chat/health`, {
     headers: getAuthHeaders()

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { sendChatMessage, clearChatHistory } from '../services/api';
+import { streamChatMessage, clearChatHistory } from '../services/api';
 import './FloatingChat.css';
 
 const FloatingChat = () => {
@@ -97,53 +97,95 @@ const FloatingChat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = inputMessage;
     setInputMessage('');
     setIsLoading(true);
-    setActiveAgents([{ name: 'Orchestrator', status: 'analyzing' }]);
+    setActiveAgents([]);
 
     try {
-      const response = await sendChatMessage(inputMessage);
+      let finalResponse = '';
+      let agentsConsulted = [];
+      let iterations = 1;
 
-      // Immediately show which agents were consulted with a MORE VISIBLE staggered animation
-      if (response.agents_consulted && response.agents_consulted.length > 0) {
-        // First, mark Orchestrator as completed
-        setActiveAgents([{ name: 'Orchestrator', status: 'completed' }]);
-        await new Promise(resolve => setTimeout(resolve, 600)); // Wait so user can see it
+      await streamChatMessage(messageToSend, (event) => {
+        console.log('SSE Event:', event);
 
-        // Then add each consulted agent with a delay to show them appearing one by one
-        for (let i = 0; i < response.agents_consulted.length; i++) {
-          setActiveAgents(prev => [...prev, {
-            name: response.agents_consulted[i],
-            status: 'completed'
-          }]);
-          await new Promise(resolve => setTimeout(resolve, 600)); // 600ms between each agent
+        switch (event.type) {
+          case 'start':
+            // Orchestrator started
+            setActiveAgents([{ name: event.agent, status: 'analyzing' }]);
+            break;
+
+          case 'agent_start':
+            // A specialized agent started working
+            setActiveAgents(prev => {
+              // Mark Orchestrator as completed if it's still analyzing
+              const updated = prev.map(agent =>
+                agent.name === 'Orchestrator' && agent.status === 'analyzing'
+                  ? { ...agent, status: 'completed' }
+                  : agent
+              );
+              // Add the new agent
+              return [...updated, { name: event.agent, status: 'analyzing' }];
+            });
+            break;
+
+          case 'agent_complete':
+            // An agent completed its work
+            setActiveAgents(prev =>
+              prev.map(agent =>
+                agent.name === event.agent
+                  ? { ...agent, status: 'completed' }
+                  : agent
+              )
+            );
+            break;
+
+          case 'response':
+            // Final response received
+            finalResponse = event.response;
+            agentsConsulted = event.agents_consulted || [];
+            iterations = event.iterations || 1;
+            break;
+
+          case 'done':
+            // Stream completed
+            setIsLoading(false);
+
+            const assistantMessage = {
+              role: 'assistant',
+              content: finalResponse,
+              timestamp: new Date(),
+              agentsConsulted: agentsConsulted,
+              iterations: iterations
+            };
+
+            setMessages(prev => [...prev, assistantMessage]);
+
+            // Clear agents after a brief delay to let user see the final state
+            setTimeout(() => {
+              setActiveAgents([]);
+            }, 1200);
+            break;
+
+          case 'error':
+            // Error occurred
+            setIsLoading(false);
+            const errorMessage = {
+              role: 'assistant',
+              content: `Sorry, I encountered an error: ${event.error}. Please try again.`,
+              timestamp: new Date(),
+              isError: true
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            setActiveAgents([]);
+            break;
+
+          default:
+            console.log('Unknown event type:', event.type);
         }
+      });
 
-        // Wait a bit more to let user see all agents before showing answer
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        // Even if no specialized agents, show orchestrator completed
-        setActiveAgents([{ name: 'Orchestrator', status: 'completed' }]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-      }
-
-      // Turn off loading but keep agents visible
-      setIsLoading(false);
-
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date(),
-        agentsConsulted: response.agents_consulted || [],
-        iterations: response.iterations || 1
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Clear agents after answer is shown
-      setTimeout(() => {
-        setActiveAgents([]);
-      }, 2500); // Keep agents visible for 2.5 seconds after answer appears
     } catch (error) {
       const errorMessage = {
         role: 'assistant',
