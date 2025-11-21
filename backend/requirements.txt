@@ -13,3 +13,5 @@ python-jose[cryptography]==3.3.0
 python-dateutil==2.9.0
 openai==1.58.1
 pytz==2025.2
+yfinance==0.2.49
+requests==2.32.3

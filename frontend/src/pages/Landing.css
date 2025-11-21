@@ -488,6 +488,118 @@
   line-height: 1.8;
 }
 
+/* Agent Showcase Cards */
+.agents-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 3rem auto;
+}
+
+.agent-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 102, 204, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+}
+
+.agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.agent-icon-large {
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.agent-card-header h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.agent-card-description {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.agent-example {
+  background: rgba(0, 102, 204, 0.1);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.example-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.example-text {
+  color: #60a5fa;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Orchestrator Section */
+.orchestrator-section {
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+  border: 2px solid rgba(0, 102, 204, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 3rem auto;
+  max-width: 800px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.orchestrator-icon {
+  font-size: 4rem;
+  flex-shrink: 0;
+}
+
+.orchestrator-content h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.75rem 0;
+}
+
+.orchestrator-content p {
+  color: #cbd5e1;
+  line-height: 1.7;
+  margin: 0;
+  font-size: 1rem;
+}
+
 .ai-features-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -884,6 +996,19 @@
 
   .ai-chat-description {
     font-size: 1rem;
+  }
+
+  .agents-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .orchestrator-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .orchestrator-icon {
+    font-size: 3rem;
   }
 
   .ai-features-list {

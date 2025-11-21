@@ -190,6 +190,6 @@ async def chat_health_check():
     return {
         "status": "healthy",
         "service": "Multi-Agent Financial Chat",
-        "agents": ["Orchestrator", "SQL Analyst", "Financial Advisor"],
-        "features": ["Conversation Memory", "User Context Awareness"]
+        "agents": ["Orchestrator", "SQL Analyst", "Financial Advisor", "Market Data", "Financial Information"],
+        "features": ["Conversation Memory", "User Context Awareness", "Real-time Market Data", "Web Search"]
     }

@@ -181,13 +181,89 @@ function Landing() {
           </div>
           <h2 className="ai-chat-title">
             Your Personal AI Financial Advisor
-            <span className="title-accent"> That Knows Everything</span>
+            <span className="title-accent"> Powered by Specialized AI Agents</span>
           </h2>
           <p className="ai-chat-description">
-            Unlike basic chatbots, our AI assistant is powered by a sophisticated multi-agent system that understands
-            the complete context of your financial life. Ask questions about your spending patterns, investment performance,
-            budget trends, or get personalized recommendations—all through natural conversation.
+            Unlike basic chatbots, our AI assistant is powered by a sophisticated multi-agent system with specialized experts
+            working together to understand your complete financial picture. Each agent is trained for specific tasks,
+            ensuring you get accurate, comprehensive insights through natural conversation.
           </p>
+
+          {/* Agent Cards */}
+          <div className="agents-showcase">
+            <div className="agent-card">
+              <div className="agent-card-header">
+                <span className="agent-icon-large">📊</span>
+                <h3>SQL Analyst Agent</h3>
+              </div>
+              <p className="agent-card-description">
+                Expert at analyzing your spending patterns, breaking down expenses by category,
+                and revealing trends in your financial data.
+              </p>
+              <div className="agent-example">
+                <span className="example-label">Try asking:</span>
+                <div className="example-text">"How much did I spend on food this month?"</div>
+              </div>
+            </div>
+
+            <div className="agent-card">
+              <div className="agent-card-header">
+                <span className="agent-icon-large">💡</span>
+                <h3>Financial Advisor Agent</h3>
+              </div>
+              <p className="agent-card-description">
+                Provides personalized financial advice, budget optimization strategies,
+                and actionable recommendations to improve your financial health.
+              </p>
+              <div className="agent-example">
+                <span className="example-label">Try asking:</span>
+                <div className="example-text">"How can I save more money each month?"</div>
+              </div>
+            </div>
+
+            <div className="agent-card">
+              <div className="agent-card-header">
+                <span className="agent-icon-large">📈</span>
+                <h3>Market Data Agent</h3>
+              </div>
+              <p className="agent-card-description">
+                Real-time access to stock prices, cryptocurrency values, and currency exchange rates.
+                Stay informed about market movements instantly.
+              </p>
+              <div className="agent-example">
+                <span className="example-label">Try asking:</span>
+                <div className="example-text">"What's Tesla stock price today?"</div>
+              </div>
+            </div>
+
+            <div className="agent-card">
+              <div className="agent-card-header">
+                <span className="agent-icon-large">🏦</span>
+                <h3>Financial Info Agent</h3>
+              </div>
+              <p className="agent-card-description">
+                General financial knowledge expert. Compare banks, investment platforms,
+                explain financial products, and get current rates and offerings.
+              </p>
+              <div className="agent-example">
+                <span className="example-label">Try asking:</span>
+                <div className="example-text">"Compare Avanza and Nordea savings accounts"</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Orchestrator Highlight */}
+          <div className="orchestrator-section">
+            <div className="orchestrator-icon">🎯</div>
+            <div className="orchestrator-content">
+              <h3>Intelligent Orchestration</h3>
+              <p>
+                The Orchestrator Agent understands your question and automatically routes it to the right specialist.
+                For complex queries, multiple agents collaborate seamlessly to provide comprehensive answers—all behind the scenes.
+              </p>
+            </div>
+          </div>
+
           <div className="ai-features-list">
             <div className="ai-feature-item">
               <span className="ai-feature-icon">💬</span>
@@ -206,8 +282,8 @@ function Landing() {
             <div className="ai-feature-item">
               <span className="ai-feature-icon">⚡</span>
               <div>
-                <strong>Instant Analysis</strong>
-                <p>Get complex insights and answers in seconds</p>
+                <strong>Real-Time Intelligence</strong>
+                <p>Get complex insights, live market data, and answers in seconds</p>
               </div>
             </div>
             <div className="ai-feature-item">

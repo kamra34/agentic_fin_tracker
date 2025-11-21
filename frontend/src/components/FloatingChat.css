@@ -457,28 +457,81 @@
 }
 
 .suggestions-label {
-  margin: 0 0 8px 0;
-  font-size: 12px;
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Category Tabs */
+.suggestion-categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.category-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: #f8f9fa;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
   color: #666;
   font-weight: 500;
 }
 
+.category-tab:hover {
+  background: #f0f1f3;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+}
+
+.category-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.category-icon {
+  font-size: 24px;
+}
+
+.category-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Questions List */
 .suggestions-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .suggestion-btn {
   background: #f8f9fa;
   border: 1px solid #e5e7eb;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
   text-align: left;
   color: #667eea;
   transition: all 0.2s;
+  line-height: 1.4;
 }
 
 .suggestion-btn:hover {
@@ -486,6 +539,7 @@
   color: white;
   border-color: #667eea;
   transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 /* Chat Input */

@@ -16,6 +16,7 @@ const FloatingChat = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeAgents, setActiveAgents] = useState([]); // Track active agents during processing
+  const [selectedCategory, setSelectedCategory] = useState('Data Analysis'); // Selected suggestion category
   const [chatSize, setChatSize] = useState({ width: 400, height: 600 });
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState(null);
@@ -206,14 +207,48 @@ const FloatingChat = () => {
     });
   };
 
-  const getSuggestions = () => [
-    "How much did I spend this month?",
-    "Show my spending by category",
-    "What's my savings rate?",
-    "Give me financial advice",
-    "Show monthly trends",
-    "How are my investments performing?"
-  ];
+  const getAgentSuggestions = () => ({
+    'Data Analysis': {
+      icon: '📊',
+      agent: 'SQL Analyst',
+      questions: [
+        "How much did I spend this month?",
+        "Show my spending by category",
+        "What are my monthly trends?",
+        "Which category costs the most?"
+      ]
+    },
+    'Financial Advice': {
+      icon: '💡',
+      agent: 'Financial Advisor',
+      questions: [
+        "How can I save more money?",
+        "Is my budget healthy?",
+        "Give me personalized financial advice",
+        "What's my savings rate?"
+      ]
+    },
+    'Market Data': {
+      icon: '📈',
+      agent: 'Market Data',
+      questions: [
+        "What's Tesla stock price?",
+        "Convert 1000 SEK to USD",
+        "What's Bitcoin price today?",
+        "Show me Apple stock info"
+      ]
+    },
+    'Financial Info': {
+      icon: '🏦',
+      agent: 'Financial Information',
+      questions: [
+        "Compare Avanza and Nordea",
+        "What's a good savings account?",
+        "Explain ISK accounts",
+        "Best investment platforms in Sweden"
+      ]
+    }
+  });
 
   const handleSuggestionClick = (suggestion) => {
     setInputMessage(suggestion);
@@ -347,7 +382,10 @@ const FloatingChat = () => {
                           <div className="agents-used">
                             {message.agentsConsulted.map((agent, i) => (
                               <span key={i} className="agent-tag" title={`Consulted: ${agent}`}>
-                                {agent === 'SQL Analyst' ? '📊' : '💡'}
+                                {agent === 'SQL Analyst' && '📊'}
+                                {agent === 'Financial Advisor' && '💡'}
+                                {agent === 'Market Data' && '📈'}
+                                {agent === 'Financial Information' && '🏦'}
                               </span>
                             ))}
                           </div>
@@ -381,6 +419,8 @@ const FloatingChat = () => {
                                     {agent.name === 'Orchestrator' && '🎯'}
                                     {agent.name === 'SQL Analyst' && '📊'}
                                     {agent.name === 'Financial Advisor' && '💡'}
+                                    {agent.name === 'Market Data' && '📈'}
+                                    {agent.name === 'Financial Information' && '🏦'}
                                   </div>
                                   <div className="agent-details">
                                     <div className="agent-name">{agent.name}</div>
@@ -408,15 +448,31 @@ const FloatingChat = () => {
 
               {messages.length === 1 && (
                 <div className="chat-suggestions">
-                  <p className="suggestions-label">Quick questions:</p>
+                  <p className="suggestions-label">Try our AI agents:</p>
+
+                  {/* Category tabs */}
+                  <div className="suggestion-categories">
+                    {Object.entries(getAgentSuggestions()).map(([category, data]) => (
+                      <button
+                        key={category}
+                        className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        <span className="category-icon">{data.icon}</span>
+                        <span className="category-name">{category}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Questions for selected category */}
                   <div className="suggestions-list">
-                    {getSuggestions().map((suggestion, index) => (
+                    {getAgentSuggestions()[selectedCategory].questions.map((question, index) => (
                       <button
                         key={index}
                         className="suggestion-btn"
-                        onClick={() => handleSuggestionClick(suggestion)}
+                        onClick={() => handleSuggestionClick(question)}
                       >
-                        {suggestion}
+                        {question}
                       </button>
                     ))}
                   </div>

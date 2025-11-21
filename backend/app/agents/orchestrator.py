@@ -2,6 +2,8 @@ from typing import List, Dict, Any, Optional
 from .base_agent import BaseAgent
 from .sql_analyst import SQLAnalystAgent
 from .financial_advisor import FinancialAdvisorAgent
+from .market_data import MarketDataAgent
+from .financial_info import FinancialInformationAgent
 from app.services.chat_data_service import ChatDataService
 import json
 
@@ -82,10 +84,18 @@ Available Agents:
 2. Financial Advisor: Expert at providing financial advice and recommendations
    - Use for: "How can I save more?", "Is my budget healthy?", "Financial advice"
 
+3. Market Data: Provides real-time stock prices, crypto values, and currency exchange rates
+   - Use for: "What's Tesla stock price?", "Convert 1000 USD to SEK", "Bitcoin price"
+
+4. Financial Information: General financial knowledge, bank comparisons, interest rates
+   - Use for: "Compare Avanza and Nordea", "What's a good savings account?", "Explain ISK"
+
 Decision Rules:
 - If the user asks for DATA or ANALYSIS → route to SQL Analyst
 - If the user asks for ADVICE or RECOMMENDATIONS → route to Financial Advisor
-- If the query needs BOTH data analysis AND advice → use both agents
+- If the user asks about STOCK PRICES, CRYPTO, or CURRENCY CONVERSION → route to Market Data
+- If the user asks about BANKS, PRODUCTS, COMPARISONS, or GENERAL FINANCIAL INFO → route to Financial Information
+- If the query needs MULTIPLE perspectives → use multiple agents
 - For greetings or simple questions → respond directly without invoking agents
 
 When invoking agents:
@@ -100,6 +110,8 @@ When invoking agents:
         self.data_service = data_service
         self.sql_analyst = SQLAnalystAgent(data_service)
         self.financial_advisor = FinancialAdvisorAgent(data_service)
+        self.market_data = MarketDataAgent(data_service)
+        self.financial_info = FinancialInformationAgent(data_service)
 
     def get_tools(self) -> List[Dict[str, Any]]:
         """Define agent invocation functions"""
@@ -132,6 +144,40 @@ When invoking agents:
                             "query": {
                                 "type": "string",
                                 "description": "The specific question to ask the Financial Advisor"
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "consult_market_data",
+                    "description": "Consult the Market Data agent for real-time stock prices, cryptocurrency values, and currency exchange rates",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "The specific question to ask the Market Data agent"
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "consult_financial_information",
+                    "description": "Consult the Financial Information agent for general financial knowledge, bank comparisons, product explanations, and current rates",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "The specific question to ask the Financial Information agent"
                             }
                         },
                         "required": ["query"]
@@ -170,6 +216,28 @@ When invoking agents:
             self._emit_event("agent_complete", "Financial Advisor", {"response": response})
 
             return {"agent": "Financial Advisor", "response": response}
+
+        elif function_name == "consult_market_data":
+            # Emit agent start event
+            self._emit_event("agent_start", "Market Data", {"query": query})
+
+            response = self.market_data.chat(query)
+
+            # Emit agent complete event
+            self._emit_event("agent_complete", "Market Data", {"response": response})
+
+            return {"agent": "Market Data", "response": response}
+
+        elif function_name == "consult_financial_information":
+            # Emit agent start event
+            self._emit_event("agent_start", "Financial Information", {"query": query})
+
+            response = self.financial_info.chat(query)
+
+            # Emit agent complete event
+            self._emit_event("agent_complete", "Financial Information", {"response": response})
+
+            return {"agent": "Financial Information", "response": response}
 
         else:
             return {"error": f"Unknown function: {function_name}"}
