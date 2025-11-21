@@ -37,6 +37,8 @@ function MonthlyExpenses() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showIncomeForm, setShowIncomeForm] = useState(false)
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [showIncomeModal, setShowIncomeModal] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [editingIncome, setEditingIncome] = useState(null)
   const [formData, setFormData] = useState({
@@ -180,6 +182,7 @@ function MonthlyExpenses() {
 
       // Reset form
       setShowAddForm(false)
+      setShowExpenseModal(false)
       setEditingExpense(null)
       resetForm()
     } catch (error) {
@@ -198,7 +201,7 @@ function MonthlyExpenses() {
       status: expense.status,
       account_id: expense.account_id?.toString() || ''
     })
-    setShowAddForm(true)
+    setShowExpenseModal(true)
     // Load subcategories for the category
     if (expense.category_id) {
       const category = categories.find(c => c.id === expense.category_id)
@@ -224,6 +227,7 @@ function MonthlyExpenses() {
 
   const handleCancelForm = () => {
     setShowAddForm(false)
+    setShowExpenseModal(false)
     setEditingExpense(null)
     resetForm()
   }
@@ -263,7 +267,7 @@ function MonthlyExpenses() {
   const handleAddOneTimeIncome = () => {
     setEditingIncome(null)
     setIncomeFormData({ source_name: '', amount: '', description: '' })
-    setShowIncomeForm(true)
+    setShowIncomeModal(true)
   }
 
   const handleEditIncome = (income) => {
@@ -273,7 +277,7 @@ function MonthlyExpenses() {
       amount: income.amount.toString(),
       description: income.description || ''
     })
-    setShowIncomeForm(true)
+    setShowIncomeModal(true)
   }
 
   const handleIncomeSubmit = async (e) => {
@@ -295,7 +299,7 @@ function MonthlyExpenses() {
           description: incomeFormData.description
         })
       }
-      setShowIncomeForm(false)
+      setShowIncomeModal(false)
       setEditingIncome(null)
       setIncomeFormData({ source_name: '', amount: '', description: '' })
       await loadMonthlyData()
@@ -318,7 +322,7 @@ function MonthlyExpenses() {
   }
 
   const handleCancelIncomeForm = () => {
-    setShowIncomeForm(false)
+    setShowIncomeModal(false)
     setEditingIncome(null)
     setIncomeFormData({ source_name: '', amount: '', description: '' })
   }
@@ -484,9 +488,9 @@ function MonthlyExpenses() {
           </div>
         </div>
 
-        {showIncomeForm && (
+        {showIncomeForm && !editingIncome && (
           <div className="income-form-card">
-            <h4>{editingIncome ? 'Edit Income' : 'Add One-Time Income'}</h4>
+            <h4>Add One-Time Income</h4>
             <form onSubmit={handleIncomeSubmit} className="income-form">
               <div className="form-group">
                 <label htmlFor="income-source">Source Name</label>
@@ -523,7 +527,7 @@ function MonthlyExpenses() {
               </div>
               <div className="form-actions">
                 <button type="submit" className="btn-submit">
-                  {editingIncome ? 'Update' : 'Add'} Income
+                  Add Income
                 </button>
                 <button type="button" onClick={handleCancelIncomeForm} className="btn-cancel">
                   Cancel
@@ -584,10 +588,10 @@ function MonthlyExpenses() {
           )}
         </div>
 
-        {/* Add/Edit Expense Form */}
-        {showAddForm && isCurrentMonth && (
+        {/* Add Expense Form */}
+        {showAddForm && !editingExpense && isCurrentMonth && (
           <div className="expense-form-card">
-            <h4>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h4>
+            <h4>Add New Expense</h4>
             <form onSubmit={handleSubmit} className="expense-form">
               <div className="form-row">
                 <div className="form-group">
@@ -682,7 +686,7 @@ function MonthlyExpenses() {
 
               <div className="form-actions">
                 <button type="submit" className="btn-submit">
-                  {editingExpense ? 'Update' : 'Add'} Expense
+                  Add Expense
                 </button>
                 <button type="button" onClick={handleCancelForm} className="btn-cancel">
                   Cancel
@@ -726,6 +730,185 @@ function MonthlyExpenses() {
           </div>
         )}
       </div>
+
+      {/* Edit Income Modal */}
+      {showIncomeModal && (
+        <div className="modal-overlay" onClick={handleCancelIncomeForm}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingIncome ? 'Edit Income' : 'Add One-Time Income'}</h3>
+              <button className="modal-close" onClick={handleCancelIncomeForm}>
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleIncomeSubmit}>
+              <div className="form-group">
+                <label htmlFor="modal-income-source">Source Name</label>
+                <input
+                  type="text"
+                  id="modal-income-source"
+                  value={incomeFormData.source_name}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, source_name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., Bonus, Freelance Project"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-income-amount">Amount</label>
+                <input
+                  type="number"
+                  id="modal-income-amount"
+                  step="0.01"
+                  min="0"
+                  value={incomeFormData.amount}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, amount: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., 5000"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-income-description">Description (Optional)</label>
+                <input
+                  type="text"
+                  id="modal-income-description"
+                  value={incomeFormData.description}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, description: e.target.value })}
+                  className="form-input"
+                  placeholder="Additional details"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCancelIncomeForm}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingIncome ? 'Update' : 'Add'} Income
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Expense Modal */}
+      {showExpenseModal && (
+        <div className="modal-overlay" onClick={handleCancelForm}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Expense</h3>
+              <button className="modal-close" onClick={handleCancelForm}>
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="modal-date">Date</label>
+                  <input
+                    type="date"
+                    id="modal-date"
+                    name="date"
+                    value={formData.date || getDefaultDate()}
+                    onChange={handleFormChange}
+                    required
+                    max={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-31`}
+                    min={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-amount">Amount</label>
+                  <input
+                    type="number"
+                    id="modal-amount"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleFormChange}
+                    step="0.01"
+                    min="0"
+                    required
+                    placeholder="0.00"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="modal-category_id">Category</label>
+                  <select
+                    id="modal-category_id"
+                    name="category_id"
+                    value={formData.category_id}
+                    onChange={handleFormChange}
+                    required
+                    className="form-input"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-subcategory_id">Subcategory (Optional)</label>
+                  <select
+                    id="modal-subcategory_id"
+                    name="subcategory_id"
+                    value={formData.subcategory_id}
+                    onChange={handleFormChange}
+                    className="form-input"
+                    disabled={!formData.category_id || subcategories.length === 0}
+                  >
+                    <option value="">Select a subcategory</option>
+                    {subcategories.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modal-account_id">Payment Account</label>
+                <select
+                  id="modal-account_id"
+                  name="account_id"
+                  value={formData.account_id}
+                  onChange={handleFormChange}
+                  required
+                  className="form-input"
+                >
+                  <option value="">Select a payment account</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.owner_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCancelForm}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Expense
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
