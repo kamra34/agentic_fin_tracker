@@ -28,8 +28,8 @@ function Landing() {
     },
     {
       icon: '🤖',
-      title: 'AI-Powered Insights',
-      description: 'Get intelligent financial recommendations and predictions powered by advanced AI. Chat with your financial assistant anytime.',
+      title: 'AI Chat Assistant - Ask Anything',
+      description: 'Chat naturally with your personal AI financial advisor powered by multi-agent architecture. Get instant answers about your spending, investments, and trends with full context awareness of all your financial data.',
       gradient: 'linear-gradient(135deg, #0066cc 0%, #3b82f6 100%)'
     },
     {
@@ -52,8 +52,7 @@ function Landing() {
   }
 
   const handleLogin = () => {
-    setAuthMode('login')
-    setShowAuthModal(true)
+    navigate('/login')
   }
 
   const handleAuthSubmit = () => {
@@ -99,8 +98,8 @@ function Landing() {
           </h1>
 
           <p className="hero-description">
-            Smart expense tracking, investment monitoring, and AI-powered insights—all in one beautiful platform.
-            Make informed financial decisions with real-time analytics and intelligent recommendations.
+            Smart expense tracking, investment monitoring, and an AI chat assistant that knows your entire financial story.
+            Ask questions, get insights, and make informed decisions with your personal AI advisor powered by multi-agent intelligence.
           </p>
 
           <div className="hero-cta">
@@ -167,6 +166,55 @@ function Landing() {
                     <div className="chart-bar" style={{ height: '90%' }}></div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Chat Highlight Section */}
+      <section className="ai-chat-highlight">
+        <div className="ai-chat-content">
+          <div className="ai-chat-badge">
+            <span className="badge-icon">🤖</span>
+            <span>Multi-Agent AI Architecture</span>
+          </div>
+          <h2 className="ai-chat-title">
+            Your Personal AI Financial Advisor
+            <span className="title-accent"> That Knows Everything</span>
+          </h2>
+          <p className="ai-chat-description">
+            Unlike basic chatbots, our AI assistant is powered by a sophisticated multi-agent system that understands
+            the complete context of your financial life. Ask questions about your spending patterns, investment performance,
+            budget trends, or get personalized recommendations—all through natural conversation.
+          </p>
+          <div className="ai-features-list">
+            <div className="ai-feature-item">
+              <span className="ai-feature-icon">💬</span>
+              <div>
+                <strong>Natural Conversations</strong>
+                <p>Ask questions like you would to a human advisor</p>
+              </div>
+            </div>
+            <div className="ai-feature-item">
+              <span className="ai-feature-icon">🧠</span>
+              <div>
+                <strong>Full Context Awareness</strong>
+                <p>Understands all your transactions, investments, and financial history</p>
+              </div>
+            </div>
+            <div className="ai-feature-item">
+              <span className="ai-feature-icon">⚡</span>
+              <div>
+                <strong>Instant Analysis</strong>
+                <p>Get complex insights and answers in seconds</p>
+              </div>
+            </div>
+            <div className="ai-feature-item">
+              <span className="ai-feature-icon">🎯</span>
+              <div>
+                <strong>Personalized Recommendations</strong>
+                <p>Tailored advice based on your unique financial situation</p>
               </div>
             </div>
           </div>

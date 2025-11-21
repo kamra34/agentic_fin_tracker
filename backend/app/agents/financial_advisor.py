@@ -10,17 +10,36 @@ class FinancialAdvisorAgent(BaseAgent):
     """
 
     def __init__(self, data_service: ChatDataService):
+        # Get user context immediately
+        user_profile = data_service.get_user_profile()
+        user_context = f"""
+CRITICAL USER CONTEXT - USE THIS TO PERSONALIZE ADVICE:
+- User's Name: {user_profile.get('full_name', 'User')}
+- Currency: {user_profile.get('currency', 'SEK')} (use this for ALL amounts)
+- Family Size: {user_profile.get('household_info', {}).get('household_members', 'Not specified')} people
+- Vehicles Owned: {user_profile.get('household_info', {}).get('num_vehicles', 'Not specified')}
+- Housing Type: {user_profile.get('household_info', {}).get('housing_type', 'Not specified')}
+- House Size: {user_profile.get('household_info', {}).get('house_size_sqm', 'Not specified')} sqm
+- Monthly Income Goal: {user_profile.get('financial_goals', {}).get('monthly_income_goal', 'Not set')}
+- Monthly Savings Goal: {user_profile.get('financial_goals', {}).get('monthly_savings_goal', 'Not set')}
+
+Consider these factors when providing advice - especially family size and housing type!
+        """
+
         super().__init__(
             name="Financial Advisor",
             role="Personal Finance Advisor",
-            instructions="""You are an expert personal financial advisor specializing in budgeting, savings, and financial wellness.
+            instructions=f"""{user_context}
+
+You are {user_profile.get('full_name', 'the user')}'s personal financial advisor specializing in budgeting, savings, and financial wellness.
 
 Your responsibilities:
-- Analyze user's financial health and provide actionable advice
+- Analyze {user_profile.get('full_name', 'the user')}'s financial health and provide actionable advice
 - Suggest budget optimizations and spending improvements
-- Help users achieve their savings goals
+- Help achieve savings goals
 - Provide insights on income vs expenses
 - Recommend strategies for better financial management
+- Consider household size ({user_profile.get('household_info', {}).get('household_members', 'unknown')}) in recommendations
 
 IMPORTANT CONSTRAINTS:
 - You can ONLY READ data from the database
@@ -29,17 +48,20 @@ IMPORTANT CONSTRAINTS:
 - You can only provide advice based on existing data
 
 Your approach:
-1. Gather relevant financial data using available functions
-2. Analyze spending patterns, savings, and income
-3. Calculate financial health metrics
-4. Provide personalized, actionable recommendations
-5. Use encouraging and supportive language
-6. Consider the user's goals and household situation
+1. ALWAYS start by calling get_user_profile() to refresh context
+2. Gather relevant financial data using available functions
+3. Analyze spending patterns, savings, and income
+4. Calculate financial health metrics
+5. Provide personalized, actionable recommendations
+6. Use encouraging and supportive language
+7. Consider goals and household situation (family size, housing, etc.)
 
 When providing advice:
 - Be specific and actionable
+- Address user by name: {user_profile.get('full_name', 'User')}
+- Use {user_profile.get('currency', 'SEK')} for all amounts
+- Consider household size for realistic budgeting
 - Prioritize the most impactful recommendations
-- Consider the user's currency and local context
 - Acknowledge progress and celebrate wins
 - Be realistic about achievable goals
 - Explain the "why" behind recommendations"""
@@ -126,8 +148,20 @@ When providing advice:
             {
                 "type": "function",
                 "function": {
+                    "name": "get_current_income_sources",
+                    "description": "Get CURRENT recurring monthly income sources. Use this when analyzing current budget or giving advice based on current income.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
                     "name": "get_income_summary",
-                    "description": "Get income summary for budget analysis",
+                    "description": "Get income summary for a specific month for historical analysis",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -179,6 +213,8 @@ When providing advice:
         """Execute a financial analysis function"""
         if function_name == "get_user_profile":
             return self.data_service.get_user_profile()
+        elif function_name == "get_current_income_sources":
+            return self.data_service.get_current_income_sources()
         elif function_name == "get_financial_health_metrics":
             return self.data_service.get_financial_health_metrics()
         elif function_name == "get_category_breakdown":

@@ -632,3 +632,11 @@ export async function getChatHealth() {
   })
   return handleResponse(response)
 }
+
+export async function clearChatHistory() {
+  const response = await timedFetch(`${API_BASE_URL}/api/chat/clear`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}

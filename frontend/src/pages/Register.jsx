@@ -44,7 +44,7 @@ function Register() {
       await register(formData.email, formData.password, formData.fullName)
       const loginResponse = await login(formData.email, formData.password)
       localStorage.setItem('token', loginResponse.access_token)
-      navigate('/')
+      window.location.href = '/dashboard'
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {

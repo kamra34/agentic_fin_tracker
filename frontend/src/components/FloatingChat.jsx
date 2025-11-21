@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { sendChatMessage } from '../services/api';
+import { sendChatMessage, clearChatHistory } from '../services/api';
 import './FloatingChat.css';
 
 const FloatingChat = () => {
@@ -15,6 +15,7 @@ const FloatingChat = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeAgents, setActiveAgents] = useState([]); // Track active agents during processing
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -47,9 +48,25 @@ const FloatingChat = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setActiveAgents([{ name: 'Orchestrator', status: 'analyzing' }]);
 
     try {
       const response = await sendChatMessage(inputMessage);
+
+      // Show which agents were actually consulted BEFORE displaying the answer
+      if (response.agents_consulted && response.agents_consulted.length > 0) {
+        const agentsList = [
+          { name: 'Orchestrator', status: 'completed' },
+          ...response.agents_consulted.map(agent => ({
+            name: agent,
+            status: 'completed'
+          }))
+        ];
+        setActiveAgents(agentsList);
+
+        // Wait 1.5 seconds to show the agents before displaying the answer
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
 
       const assistantMessage = {
         role: 'assistant',
@@ -60,6 +77,12 @@ const FloatingChat = () => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Clear the loading state and agents after showing the answer
+      setTimeout(() => {
+        setIsLoading(false);
+        setActiveAgents([]);
+      }, 1500); // Keep agents visible for 1.5 seconds after answer appears
     } catch (error) {
       const errorMessage = {
         role: 'assistant',
@@ -68,8 +91,8 @@ const FloatingChat = () => {
         isError: true
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
+      setActiveAgents([]);
     }
   };
 
@@ -101,6 +124,24 @@ const FloatingChat = () => {
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
+  };
+
+  const handleClearConversation = async () => {
+    if (window.confirm('Are you sure you want to clear the conversation history? This cannot be undone.')) {
+      try {
+        await clearChatHistory();
+        setMessages([
+          {
+            role: 'assistant',
+            content: 'Conversation cleared! I\'m your AI financial assistant. How can I help you today?',
+            timestamp: new Date(),
+            agentsConsulted: []
+          }
+        ]);
+      } catch (error) {
+        alert('Failed to clear conversation: ' + error.message);
+      }
+    }
   };
 
   return (
@@ -141,6 +182,13 @@ const FloatingChat = () => {
               </div>
             </div>
             <div className="chat-header-actions">
+              <button
+                className="header-btn"
+                onClick={handleClearConversation}
+                title="Clear conversation"
+              >
+                🗑️
+              </button>
               <button
                 className="header-btn"
                 onClick={toggleMinimize}
@@ -193,10 +241,39 @@ const FloatingChat = () => {
                 {isLoading && (
                   <div className="chat-message assistant loading">
                     <div className="message-bubble">
-                      <div className="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                      <div className="agent-activity-container">
+                        <div className="typing-indicator">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                        {activeAgents.length > 0 && (
+                          <div className="active-agents-display">
+                            <div className="agents-label">Active Agents:</div>
+                            <div className="agents-vertical-list">
+                              {activeAgents.map((agent, index) => (
+                                <div key={index} className={`agent-item ${agent.status}`}>
+                                  <div className="agent-icon">
+                                    {agent.name === 'Orchestrator' && '🎯'}
+                                    {agent.name === 'SQL Analyst' && '📊'}
+                                    {agent.name === 'Financial Advisor' && '💡'}
+                                  </div>
+                                  <div className="agent-details">
+                                    <div className="agent-name">{agent.name}</div>
+                                    <div className="agent-status">
+                                      {agent.status === 'analyzing' ? 'Analyzing...' :
+                                       agent.status === 'completed' ? 'Completed ✓' :
+                                       'Working...'}
+                                    </div>
+                                  </div>
+                                  {agent.status === 'analyzing' && (
+                                    <div className="agent-spinner"></div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

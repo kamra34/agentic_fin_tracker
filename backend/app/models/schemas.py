@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str
     currency: str = "SEK"
+    timezone: Optional[str] = "UTC"
 
 
 class UserCreate(UserBase):
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     currency: Optional[str] = None
+    timezone: Optional[str] = None
     password: Optional[str] = Field(None, min_length=4)
     is_active: Optional[bool] = None
     household_members: Optional[int] = None
@@ -34,6 +36,7 @@ class UserResponse(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    timezone: Optional[str] = None
     household_members: Optional[int] = None
     num_vehicles: Optional[int] = None
     housing_type: Optional[str] = None

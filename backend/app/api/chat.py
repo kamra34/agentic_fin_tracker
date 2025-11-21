@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.services.chat_data_service import ChatDataService
+from app.services.conversation_manager import conversation_manager
 from app.agents.orchestrator import OrchestratorAgent
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -37,6 +38,7 @@ async def send_chat_message(
     """
     Send a message to the AI financial assistant.
     The orchestrator will route it to appropriate specialized agents.
+    Maintains conversation history per user.
     """
     try:
         # Create data service for this user
@@ -45,8 +47,16 @@ async def send_chat_message(
         # Create orchestrator agent
         orchestrator = OrchestratorAgent(data_service)
 
+        # Load conversation history from manager
+        history = conversation_manager.get_history(current_user.id)
+        orchestrator.conversation_history = history
+
         # Process the message
         result = orchestrator.chat(request.message)
+
+        # Save the conversation to manager
+        conversation_manager.add_message(current_user.id, "user", request.message)
+        conversation_manager.add_message(current_user.id, "assistant", result["response"])
 
         return ChatResponse(
             response=result["response"],
@@ -61,11 +71,21 @@ async def send_chat_message(
         )
 
 
+@router.post("/clear")
+async def clear_conversation(
+    current_user: User = Depends(get_current_user)
+):
+    """Clear conversation history for current user"""
+    conversation_manager.clear_history(current_user.id)
+    return {"message": "Conversation history cleared successfully"}
+
+
 @router.get("/health")
 async def chat_health_check():
     """Health check for chat service"""
     return {
         "status": "healthy",
         "service": "Multi-Agent Financial Chat",
-        "agents": ["Orchestrator", "SQL Analyst", "Financial Advisor"]
+        "agents": ["Orchestrator", "SQL Analyst", "Financial Advisor"],
+        "features": ["Conversation Memory", "User Context Awareness"]
     }

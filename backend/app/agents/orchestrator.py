@@ -13,10 +13,56 @@ class OrchestratorAgent(BaseAgent):
     """
 
     def __init__(self, data_service: ChatDataService):
+        # Get user profile IMMEDIATELY to provide context
+        user_profile = data_service.get_user_profile()
+
+        # Get current date/time in user's timezone
+        from datetime import datetime
+        import pytz
+
+        user_timezone = user_profile.get('timezone', 'UTC')
+        try:
+            tz = pytz.timezone(user_timezone)
+            now = datetime.now(tz)
+        except:
+            # Fallback to UTC if timezone is invalid
+            now = datetime.now(pytz.UTC)
+            user_timezone = 'UTC'
+
+        current_date = now.strftime("%Y-%m-%d")
+        current_month = now.strftime("%Y-%m")
+        current_month_name = now.strftime("%B %Y")
+        current_time = now.strftime("%H:%M:%S")
+
+        user_context = f"""
+CURRENT DATE & TIME (CRITICAL - YOU MUST KNOW THIS):
+- Today's Date: {current_date}
+- Current Time: {current_time}
+- Current Month: {current_month_name} ({current_month})
+- Day of Week: {now.strftime("%A")}
+- Timezone: {user_timezone}
+
+IMPORTANT USER CONTEXT (MEMORIZE THIS):
+- User Name: {user_profile.get('full_name', 'User')}
+- Currency: {user_profile.get('currency', 'SEK')}
+- Timezone: {user_timezone}
+- Household Members: {user_profile.get('household_info', {}).get('household_members', 'Not specified')}
+- Vehicles: {user_profile.get('household_info', {}).get('num_vehicles', 'Not specified')}
+- Housing Type: {user_profile.get('household_info', {}).get('housing_type', 'Not specified')}
+- House Size: {user_profile.get('household_info', {}).get('house_size_sqm', 'Not specified')} sqm
+- Monthly Income Goal: {user_profile.get('financial_goals', {}).get('monthly_income_goal', 'Not set')}
+- Monthly Savings Goal: {user_profile.get('financial_goals', {}).get('monthly_savings_goal', 'Not set')}
+
+CRITICAL: Always use {user_profile.get('currency', 'SEK')} when displaying amounts!
+CRITICAL: All date/time references are in user's timezone ({user_timezone})!
+        """
+
         super().__init__(
             name="Financial Assistant Orchestrator",
             role="Intelligent Query Router and Coordinator",
-            instructions="""You are the main orchestrator for a multi-agent financial assistant system.
+            instructions=f"""{user_context}
+
+You are the main orchestrator for a multi-agent financial assistant system.
 
 Your role:
 - Understand user queries and determine which specialized agent(s) to invoke
@@ -43,7 +89,8 @@ When invoking agents:
 2. Formulate a clear question for each agent
 3. Wait for agent responses
 4. Synthesize responses into a coherent answer for the user
-5. Maintain a friendly, helpful tone"""
+5. Maintain a friendly, helpful tone
+6. ALWAYS reference user's name and use their currency"""
         )
         self.data_service = data_service
         self.sql_analyst = SQLAnalystAgent(data_service)
@@ -111,6 +158,7 @@ When invoking agents:
 
         messages = [self.get_system_message()] + self.conversation_history
         agents_consulted = []
+        agent_timeline = []  # Track the order and timing of agent consultations
 
         for iteration in range(max_iterations):
             response = self.client.chat.completions.create(
@@ -151,7 +199,13 @@ When invoking agents:
 
                     # Track which agents were consulted
                     if isinstance(function_response, dict) and "agent" in function_response:
-                        agents_consulted.append(function_response["agent"])
+                        agent_name = function_response["agent"]
+                        agents_consulted.append(agent_name)
+                        agent_timeline.append({
+                            "agent": agent_name,
+                            "iteration": iteration + 1,
+                            "status": "completed"
+                        })
 
                     # Add function response to messages
                     messages.append({
@@ -168,6 +222,7 @@ When invoking agents:
                 return {
                     "response": final_response,
                     "agents_consulted": list(set(agents_consulted)),
+                    "agent_timeline": agent_timeline,
                     "iterations": iteration + 1
                 }
 
@@ -175,5 +230,6 @@ When invoking agents:
         return {
             "response": "I've processed your request but needed more iterations to complete. Please try rephrasing your question.",
             "agents_consulted": list(set(agents_consulted)),
+            "agent_timeline": agent_timeline,
             "iterations": max_iterations
         }

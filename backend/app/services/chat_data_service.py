@@ -27,7 +27,7 @@ class ChatDataService:
                 "users": {
                     "description": "User profiles with financial goals",
                     "columns": [
-                        "id", "email", "full_name", "currency", "is_active",
+                        "id", "email", "full_name", "currency", "timezone", "is_active",
                         "household_members", "num_vehicles", "housing_type",
                         "house_size_sqm", "monthly_income_goal", "monthly_savings_goal",
                         "created_at", "updated_at"
@@ -103,23 +103,29 @@ class ChatDataService:
         }
 
     def get_user_profile(self) -> Dict[str, Any]:
-        """Get current user's profile and financial goals"""
+        """Get current user's profile and financial goals - THIS IS CRITICAL CONTEXT"""
         user = self.db.query(User).filter(User.id == self.user_id).first()
         if not user:
             return {}
 
         return {
-            "id": user.id,
+            "user_id": user.id,
             "email": user.email,
             "full_name": user.full_name,
             "currency": user.currency,
-            "household_members": user.household_members,
-            "num_vehicles": user.num_vehicles,
-            "housing_type": user.housing_type,
-            "house_size_sqm": user.house_size_sqm,
-            "monthly_income_goal": user.monthly_income_goal,
-            "monthly_savings_goal": user.monthly_savings_goal,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "timezone": user.timezone or "UTC",
+            "household_info": {
+                "household_members": user.household_members or "Not specified",
+                "num_vehicles": user.num_vehicles or "Not specified",
+                "housing_type": user.housing_type or "Not specified",
+                "house_size_sqm": user.house_size_sqm or "Not specified"
+            },
+            "financial_goals": {
+                "monthly_income_goal": user.monthly_income_goal or "Not set",
+                "monthly_savings_goal": user.monthly_savings_goal or "Not set"
+            },
+            "account_created": user.created_at.isoformat() if user.created_at else None,
+            "note": f"Always use {user.currency} when displaying amounts. User's name is {user.full_name}. User's timezone is {user.timezone or 'UTC'}."
         }
 
     def get_spending_summary(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
@@ -306,11 +312,38 @@ class ChatDataService:
             "accounts": accounts_data
         }
 
+    def get_current_income_sources(self) -> Dict[str, Any]:
+        """Get CURRENT/LATEST recurring income sources (from templates) - NOT historical totals"""
+        templates = self.db.query(IncomeTemplate).filter(
+            IncomeTemplate.user_id == self.user_id,
+            IncomeTemplate.is_active == True
+        ).all()
+
+        sources = []
+        total_current = 0
+        for template in templates:
+            sources.append({
+                "source_name": template.source_name,
+                "current_amount": round(template.current_amount, 2)
+            })
+            total_current += template.current_amount
+
+        return {
+            "total_current_monthly_income": round(total_current, 2),
+            "income_sources": sources,
+            "note": "These are CURRENT recurring income amounts, not historical totals"
+        }
+
     def get_income_summary(self, month: Optional[str] = None) -> Dict[str, Any]:
-        """Get income summary for a specific month or all time"""
+        """Get income summary for a specific month or all time - WARNING: without month parameter, sums ALL historical income"""
         query = self.db.query(MonthlyIncome).filter(MonthlyIncome.user_id == self.user_id)
 
         if month:
+            query = query.filter(MonthlyIncome.month == month)
+        else:
+            # If no month specified, only get current month to avoid confusion
+            from datetime import datetime
+            month = datetime.now().strftime("%Y-%m")
             query = query.filter(MonthlyIncome.month == month)
 
         incomes = query.all()
@@ -334,7 +367,8 @@ class ChatDataService:
                 {"source": source, "amount": round(amount, 2)}
                 for source, amount in income_sources.items()
             ],
-            "month": month
+            "month": month,
+            "note": f"This is income for month: {month}. For CURRENT income sources, use get_current_income_sources()"
         }
 
     def get_expense_templates(self) -> List[Dict[str, Any]]:

@@ -29,7 +29,7 @@ function Login() {
     try {
       const response = await login(formData.username, formData.password)
       localStorage.setItem('token', response.access_token)
-      navigate('/')
+      window.location.href = '/dashboard'
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.')
     } finally {

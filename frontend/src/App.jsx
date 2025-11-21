@@ -8,8 +8,8 @@ import MonthlyExpenses from './pages/MonthlyExpenses'
 import ControlCenter from './pages/ControlCenter'
 import Management from './pages/Management'
 import Savings from './pages/Savings'
-import Chat from './pages/Chat'
 import Navigation from './components/Navigation'
+import FloatingChat from './components/FloatingChat'
 import { CurrencyProvider } from './context/CurrencyContext'
 import './App.css'
 
@@ -45,6 +45,7 @@ function App() {
                   <main className="main-content">
                     <Dashboard />
                   </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>
@@ -60,6 +61,7 @@ function App() {
                   <main className="main-content">
                     <MonthlyExpenses />
                   </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>
@@ -75,6 +77,7 @@ function App() {
                   <main className="main-content">
                     <ControlCenter />
                   </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>
@@ -90,6 +93,7 @@ function App() {
                   <main className="main-content">
                     <Management />
                   </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>
@@ -105,21 +109,7 @@ function App() {
                   <main className="main-content">
                     <Savings />
                   </main>
-                </div>
-              </CurrencyProvider>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <CurrencyProvider>
-                <div className="app">
-                  <Navigation />
-                  <main className="main-content">
-                    <Chat />
-                  </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>
@@ -135,6 +125,7 @@ function App() {
                   <main className="main-content">
                     <Profile />
                   </main>
+                  <FloatingChat />
                 </div>
               </CurrencyProvider>
             </ProtectedRoute>

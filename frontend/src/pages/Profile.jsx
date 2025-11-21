@@ -14,6 +14,25 @@ const CURRENCIES = [
   { code: 'AUD', name: 'Australian Dollar (AUD)', symbol: '$' }
 ]
 
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'Europe/Stockholm', label: 'Europe/Stockholm (CET/CEST)' },
+  { value: 'Europe/London', label: 'Europe/London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Europe/Paris (CET/CEST)' },
+  { value: 'Europe/Berlin', label: 'Europe/Berlin (CET/CEST)' },
+  { value: 'America/New_York', label: 'America/New York (EST/EDT)' },
+  { value: 'America/Chicago', label: 'America/Chicago (CST/CDT)' },
+  { value: 'America/Denver', label: 'America/Denver (MST/MDT)' },
+  { value: 'America/Los_Angeles', label: 'America/Los Angeles (PST/PDT)' },
+  { value: 'America/Toronto', label: 'America/Toronto (EST/EDT)' },
+  { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)' },
+  { value: 'Asia/Dubai', label: 'Asia/Dubai (GST)' },
+  { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)' },
+  { value: 'Australia/Sydney', label: 'Australia/Sydney (AEDT/AEST)' },
+  { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZDT/NZST)' }
+]
+
 const HOUSING_TYPES = [
   { value: 'own_house', label: 'Own House' },
   { value: 'own_apartment', label: 'Own Apartment' },
@@ -27,6 +46,7 @@ function Profile() {
   const [formData, setFormData] = useState({
     full_name: '',
     currency: 'SEK',
+    timezone: 'UTC',
     household_members: '',
     num_vehicles: '',
     housing_type: '',
@@ -50,6 +70,7 @@ function Profile() {
       setFormData({
         full_name: data.full_name || '',
         currency: data.currency || 'SEK',
+        timezone: data.timezone || 'UTC',
         household_members: data.household_members || '',
         num_vehicles: data.num_vehicles || '',
         housing_type: data.housing_type || '',
@@ -79,7 +100,17 @@ function Profile() {
       setSaving(true)
       setMessage({ type: '', text: '' })
 
-      const updated = await updateProfile(formData)
+      // Prepare data - convert empty strings to null for numeric fields
+      const dataToSubmit = {
+        ...formData,
+        household_members: formData.household_members === '' ? null : parseInt(formData.household_members),
+        num_vehicles: formData.num_vehicles === '' ? null : parseInt(formData.num_vehicles),
+        house_size_sqm: formData.house_size_sqm === '' ? null : parseInt(formData.house_size_sqm),
+        monthly_income_goal: formData.monthly_income_goal === '' ? null : parseFloat(formData.monthly_income_goal),
+        monthly_savings_goal: formData.monthly_savings_goal === '' ? null : parseFloat(formData.monthly_savings_goal)
+      }
+
+      const updated = await updateProfile(dataToSubmit)
       setUser(updated)
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
 
@@ -210,6 +241,29 @@ function Profile() {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 This currency will be used throughout the application
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="timezone">Timezone</label>
+              <select
+                id="timezone"
+                name="timezone"
+                value={formData.timezone}
+                onChange={handleChange}
+                className="form-select"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+              <p className="field-hint">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Your timezone helps the AI assistant understand your local time
               </p>
             </div>
 

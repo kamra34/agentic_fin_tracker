@@ -10,16 +10,33 @@ class SQLAnalystAgent(BaseAgent):
     """
 
     def __init__(self, data_service: ChatDataService):
+        # Get user context immediately
+        user_profile = data_service.get_user_profile()
+        user_context = f"""
+CRITICAL USER CONTEXT - ALWAYS USE THIS:
+- User's Name: {user_profile.get('full_name', 'User')}
+- User's Currency: {user_profile.get('currency', 'SEK')} (MUST use this for ALL amounts)
+- Household Size: {user_profile.get('household_info', {}).get('household_members', 'Not specified')}
+- Number of Vehicles: {user_profile.get('household_info', {}).get('num_vehicles', 'Not specified')}
+- Housing: {user_profile.get('household_info', {}).get('housing_type', 'Not specified')}
+- House Size: {user_profile.get('household_info', {}).get('house_size_sqm', 'Not specified')} sqm
+
+REMEMBER: The user's currency is {user_profile.get('currency', 'SEK')}. Display ALL amounts in {user_profile.get('currency', 'SEK')}.
+        """
+
         super().__init__(
             name="SQL Analyst",
             role="Database and Data Analysis Expert",
-            instructions="""You are an expert SQL analyst for a personal financial tracking system.
+            instructions=f"""{user_context}
+
+You are an expert SQL analyst for {user_profile.get('full_name', 'the user')}'s personal financial tracking system.
 
 Your responsibilities:
 - Analyze spending patterns and trends
 - Provide detailed breakdowns by categories, accounts, and time periods
 - Answer questions about the database structure
-- Suggest data-driven insights based on user's financial data
+- Suggest data-driven insights based on the user's financial data
+- Consider household context (family size, vehicles, housing) when providing insights
 
 IMPORTANT CONSTRAINTS:
 - You can ONLY READ data from the database
@@ -39,11 +56,17 @@ Available database tables:
 - expense_templates: Recurring expense templates
 
 When answering questions:
-1. Use the available functions to retrieve relevant data
-2. Analyze the data and identify patterns or insights
-3. Present findings in a clear, concise manner
-4. Use the user's currency when displaying amounts
-5. Suggest correlations or trends when appropriate"""
+1. ALWAYS call get_user_profile() FIRST to get complete user context
+2. For "current income" or "monthly income" questions → use get_current_income_sources()
+3. For historical income analysis → use get_income_summary(month="YYYY-MM")
+4. Use the available functions to retrieve relevant data
+5. Analyze the data and identify patterns or insights
+6. Present findings in a clear, concise manner
+7. ALWAYS use {user_profile.get('currency', 'SEK')} when displaying amounts (NEVER convert currencies!)
+8. Reference the user by name when appropriate
+9. Consider household context in your analysis
+
+CRITICAL: All amounts in the database are ALREADY in the user's currency ({user_profile.get('currency', 'SEK')}). NEVER convert or assume USD!"""
         )
         self.data_service = data_service
 
@@ -177,14 +200,26 @@ When answering questions:
             {
                 "type": "function",
                 "function": {
+                    "name": "get_current_income_sources",
+                    "description": "Get CURRENT recurring monthly income sources and amounts (NOT historical totals). Use this when user asks about 'current income' or 'monthly income'.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
                     "name": "get_income_summary",
-                    "description": "Get income summary for a specific month or all time",
+                    "description": "Get income summary for a SPECIFIC month (YYYY-MM format). Use this for historical income analysis, NOT for current income.",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "month": {
                                 "type": "string",
-                                "description": "Month in YYYY-MM format (optional)"
+                                "description": "Month in YYYY-MM format (optional, defaults to current month)"
                             }
                         },
                         "required": []
@@ -211,6 +246,8 @@ When answering questions:
             return self.data_service.get_database_schema()
         elif function_name == "get_user_profile":
             return self.data_service.get_user_profile()
+        elif function_name == "get_current_income_sources":
+            return self.data_service.get_current_income_sources()
         elif function_name == "get_spending_summary":
             return self.data_service.get_spending_summary(
                 arguments.get("start_date"),
