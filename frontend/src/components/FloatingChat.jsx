@@ -16,8 +16,12 @@ const FloatingChat = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeAgents, setActiveAgents] = useState([]); // Track active agents during processing
+  const [chatSize, setChatSize] = useState({ width: 400, height: 600 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const chatWindowRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,6 +38,53 @@ const FloatingChat = () => {
       inputRef.current?.focus();
     }
   }, [isOpen, isMinimized]);
+
+  // Resize handlers
+  const handleResizeStart = (direction) => (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeDirection(direction);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e) => {
+      if (!chatWindowRef.current) return;
+
+      const rect = chatWindowRef.current.getBoundingClientRect();
+      let newWidth = chatSize.width;
+      let newHeight = chatSize.height;
+
+      if (resizeDirection.includes('left')) {
+        newWidth = Math.max(320, Math.min(800, rect.right - e.clientX));
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight = Math.max(400, Math.min(800, rect.bottom - e.clientY));
+      }
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(320, Math.min(800, e.clientX - rect.left));
+      }
+      if (resizeDirection.includes('bottom')) {
+        newHeight = Math.max(400, Math.min(800, e.clientY - rect.top));
+      }
+
+      setChatSize({ width: newWidth, height: newHeight });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      setResizeDirection(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, resizeDirection, chatSize]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -173,7 +224,23 @@ const FloatingChat = () => {
 
       {/* Floating Chat Window */}
       {isOpen && (
-        <div className={`floating-chat-window ${isMinimized ? 'minimized' : ''}`}>
+        <div
+          ref={chatWindowRef}
+          className={`floating-chat-window ${isMinimized ? 'minimized' : ''} ${isResizing ? 'resizing' : ''}`}
+          style={{
+            width: isMinimized ? '400px' : `${chatSize.width}px`,
+            height: isMinimized ? 'auto' : `${chatSize.height}px`
+          }}
+        >
+          {/* Resize Handles */}
+          {!isMinimized && (
+            <>
+              <div className="resize-handle resize-left" onMouseDown={handleResizeStart('left')} />
+              <div className="resize-handle resize-top" onMouseDown={handleResizeStart('top')} />
+              <div className="resize-handle resize-top-left" onMouseDown={handleResizeStart('top-left')} />
+            </>
+          )}
+
           <div className="floating-chat-header">
             <div className="chat-header-info">
               <div className="chat-avatar">
