@@ -371,28 +371,38 @@ class ChatDataService:
             "note": f"This is income for month: {month}. For CURRENT income sources, use get_current_income_sources()"
         }
 
-    def get_expense_templates(self) -> List[Dict[str, Any]]:
-        """Get all recurring expense templates"""
+    def get_expense_templates(self) -> Dict[str, Any]:
+        """Get all recurring expense templates with calculated total"""
         templates = self.db.query(ExpenseTemplate).filter(
             ExpenseTemplate.user_id == self.user_id,
             ExpenseTemplate.is_active == True
         ).all()
 
         result = []
+        total_amount = 0
+
         for template in templates:
             category = self.db.query(Category).filter(Category.id == template.category_id).first()
             subcategory = None
             if template.subcategory_id:
                 subcategory = self.db.query(Subcategory).filter(Subcategory.id == template.subcategory_id).first()
 
+            amount = round(template.amount, 2)
+            total_amount += amount
+
             result.append({
                 "name": template.name,
-                "amount": round(template.amount, 2),
+                "amount": amount,
                 "category": category.name if category else None,
                 "subcategory": subcategory.name if subcategory else None
             })
 
-        return result
+        return {
+            "templates": result,
+            "total_recurring_expenses": round(total_amount, 2),
+            "count": len(result),
+            "note": "This total is CALCULATED BY THE DATABASE, not manually summed. Use this total directly."
+        }
 
     def get_financial_health_metrics(self) -> Dict[str, Any]:
         """Calculate overall financial health metrics"""

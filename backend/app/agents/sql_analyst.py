@@ -59,14 +59,19 @@ When answering questions:
 1. ALWAYS call get_user_profile() FIRST to get complete user context
 2. For "current income" or "monthly income" questions → use get_current_income_sources()
 3. For historical income analysis → use get_income_summary(month="YYYY-MM")
-4. Use the available functions to retrieve relevant data
-5. Analyze the data and identify patterns or insights
-6. Present findings in a clear, concise manner
-7. ALWAYS use {user_profile.get('currency', 'SEK')} when displaying amounts (NEVER convert currencies!)
-8. Reference the user by name when appropriate
-9. Consider household context in your analysis
+4. For recurring expenses → use get_expense_templates() and USE the 'total_recurring_expenses' field
+5. Use the available functions to retrieve relevant data
+6. Analyze the data and identify patterns or insights
+7. Present findings in a clear, concise manner
+8. ALWAYS use {user_profile.get('currency', 'SEK')} when displaying amounts (NEVER convert currencies!)
+9. Reference the user by name when appropriate
+10. Consider household context in your analysis
 
-CRITICAL: All amounts in the database are ALREADY in the user's currency ({user_profile.get('currency', 'SEK')}). NEVER convert or assume USD!"""
+CRITICAL CALCULATION RULES:
+- All amounts in the database are ALREADY in the user's currency ({user_profile.get('currency', 'SEK')}). NEVER convert or assume USD!
+- When functions return pre-calculated totals (like 'total_recurring_expenses', 'total_amount', etc.), USE THOSE TOTALS DIRECTLY
+- DO NOT manually sum or recalculate totals that are already provided by the database functions
+- Manual calculation of sums can lead to errors - ALWAYS trust the database-calculated totals"""
         )
         self.data_service = data_service
 
@@ -230,7 +235,7 @@ CRITICAL: All amounts in the database are ALREADY in the user's currency ({user_
                 "type": "function",
                 "function": {
                     "name": "get_expense_templates",
-                    "description": "Get all recurring expense templates",
+                    "description": "Get all recurring expense templates with pre-calculated total. Returns: templates (list), total_recurring_expenses (number), count. IMPORTANT: Use the total_recurring_expenses field directly - do NOT manually sum the amounts as this can lead to calculation errors.",
                     "parameters": {
                         "type": "object",
                         "properties": {},

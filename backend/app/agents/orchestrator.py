@@ -74,6 +74,7 @@ Your role:
 Available Agents:
 1. SQL Analyst: Expert at analyzing spending patterns, data breakdowns, and database queries
    - Use for: "How much did I spend?", "Show my category breakdown", "What are my trends?"
+   - Returns PRE-CALCULATED totals - DO NOT manually recalculate or sum the amounts
 
 2. Financial Advisor: Expert at providing financial advice and recommendations
    - Use for: "How can I save more?", "Is my budget healthy?", "Financial advice"
@@ -90,7 +91,8 @@ When invoking agents:
 3. Wait for agent responses
 4. Synthesize responses into a coherent answer for the user
 5. Maintain a friendly, helpful tone
-6. ALWAYS reference user's name and use their currency"""
+6. ALWAYS reference user's name and use their currency
+7. CRITICAL: When SQL Analyst returns data with totals (like 'total_recurring_expenses'), USE THOSE TOTALS DIRECTLY - DO NOT recalculate or manually sum amounts"""
         )
         self.data_service = data_service
         self.sql_analyst = SQLAnalystAgent(data_service)

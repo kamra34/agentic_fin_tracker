@@ -53,20 +53,31 @@ const FloatingChat = () => {
     try {
       const response = await sendChatMessage(inputMessage);
 
-      // Show which agents were actually consulted BEFORE displaying the answer
+      // Immediately show which agents were consulted with a MORE VISIBLE staggered animation
       if (response.agents_consulted && response.agents_consulted.length > 0) {
-        const agentsList = [
-          { name: 'Orchestrator', status: 'completed' },
-          ...response.agents_consulted.map(agent => ({
-            name: agent,
-            status: 'completed'
-          }))
-        ];
-        setActiveAgents(agentsList);
+        // First, mark Orchestrator as completed
+        setActiveAgents([{ name: 'Orchestrator', status: 'completed' }]);
+        await new Promise(resolve => setTimeout(resolve, 600)); // Wait so user can see it
 
-        // Wait 1.5 seconds to show the agents before displaying the answer
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Then add each consulted agent with a delay to show them appearing one by one
+        for (let i = 0; i < response.agents_consulted.length; i++) {
+          setActiveAgents(prev => [...prev, {
+            name: response.agents_consulted[i],
+            status: 'completed'
+          }]);
+          await new Promise(resolve => setTimeout(resolve, 600)); // 600ms between each agent
+        }
+
+        // Wait a bit more to let user see all agents before showing answer
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        // Even if no specialized agents, show orchestrator completed
+        setActiveAgents([{ name: 'Orchestrator', status: 'completed' }]);
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
+
+      // Turn off loading but keep agents visible
+      setIsLoading(false);
 
       const assistantMessage = {
         role: 'assistant',
@@ -78,11 +89,10 @@ const FloatingChat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Clear the loading state and agents after showing the answer
+      // Clear agents after answer is shown
       setTimeout(() => {
-        setIsLoading(false);
         setActiveAgents([]);
-      }, 1500); // Keep agents visible for 1.5 seconds after answer appears
+      }, 2500); // Keep agents visible for 2.5 seconds after answer appears
     } catch (error) {
       const errorMessage = {
         role: 'assistant',
@@ -238,18 +248,23 @@ const FloatingChat = () => {
                   </div>
                 ))}
 
-                {isLoading && (
+                {/* Show agents while loading OR after response (but before clearing) */}
+                {(isLoading || activeAgents.length > 0) && (
                   <div className="chat-message assistant loading">
                     <div className="message-bubble">
                       <div className="agent-activity-container">
-                        <div className="typing-indicator">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
+                        {isLoading && (
+                          <div className="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                        )}
                         {activeAgents.length > 0 && (
                           <div className="active-agents-display">
-                            <div className="agents-label">Active Agents:</div>
+                            <div className="agents-label">
+                              {isLoading ? 'Active Agents:' : 'Agents Consulted:'}
+                            </div>
                             <div className="agents-vertical-list">
                               {activeAgents.map((agent, index) => (
                                 <div key={index} className={`agent-item ${agent.status}`}>
