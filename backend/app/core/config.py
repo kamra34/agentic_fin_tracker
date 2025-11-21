@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     MODEL_ID: str = "gpt-4o"
 
+    # Environment Detection
+    ENVIRONMENT: str = "development"  # Options: development, production
+    RAILWAY_ENVIRONMENT: str = ""  # Railway sets this automatically
+
     class Config:
         env_file = str(Path(__file__).parent.parent.parent / ".env")
         case_sensitive = True
@@ -35,6 +39,15 @@ class Settings(BaseSettings):
     def cors_origins(self) -> List[str]:
         """Parse ALLOWED_ORIGINS string into list"""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production (Railway or ENVIRONMENT=production)"""
+        return (
+            self.ENVIRONMENT.lower() == "production" or
+            bool(self.RAILWAY_ENVIRONMENT) or
+            os.getenv("RAILWAY_ENVIRONMENT") is not None
+        )
 
 
 settings = Settings()

@@ -38,6 +38,22 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": exc.errors(), "body": exc.body}
     )
 
+# Add HTTPS redirect middleware (production only)
+@app.middleware("http")
+async def enforce_https_in_production(request: Request, call_next):
+    # Only enforce HTTPS in production (Railway)
+    if settings.is_production:
+        # Check if request is HTTP (not HTTPS)
+        if request.url.scheme == "http":
+            # Redirect to HTTPS
+            https_url = request.url.replace(scheme="https")
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=str(https_url), status_code=307)
+
+    # Continue with request
+    response = await call_next(request)
+    return response
+
 # Add timing middleware for performance monitoring
 @app.middleware("http")
 async def add_timing_header(request: Request, call_next):
