@@ -614,3 +614,21 @@ export async function getSavingsAccountStats(accountId) {
   })
   return handleResponse(response)
 }
+
+// ===== Chat API =====
+
+export async function sendChatMessage(message) {
+  const response = await timedFetch(`${API_BASE_URL}/api/chat/message`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ message })
+  })
+  return handleResponse(response)
+}
+
+export async function getChatHealth() {
+  const response = await timedFetch(`${API_BASE_URL}/api/chat/health`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}

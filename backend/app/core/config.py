@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # OpenAI Configuration
+    OPENAI_API_KEY: str
+    MODEL_ID: str = "gpt-4o"
+
     class Config:
         env_file = str(Path(__file__).parent.parent.parent / ".env")
         case_sensitive = True
