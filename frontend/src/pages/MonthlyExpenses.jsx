@@ -198,7 +198,7 @@ function MonthlyExpenses() {
       category_id: expense.category_id?.toString() || '',
       subcategory_id: expense.subcategory_id?.toString() || '',
       amount: expense.amount.toString(),
-      status: expense.status,
+      status: expense.status !== undefined ? expense.status : true,
       account_id: expense.account_id?.toString() || ''
     })
     setShowExpenseModal(true)
