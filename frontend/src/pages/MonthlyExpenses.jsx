@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react'
 import {
-  getMonthlyExpenses,
-  getMonthlySummary,
-  getAvailableMonths,
+  getMonthlyInitialData,
+  getMonthlyAllData,
   createExpense,
   updateExpense,
   deleteExpense,
-  getCategories,
   getSubcategories,
-  getAccounts,
-  getMonthlyAccountAllocation,
-  getMonthlyIncomes,
   generateMonthlyIncomes,
-  getMonthlyIncomeTotal,
   createMonthlyIncome,
   updateMonthlyIncome,
   deleteMonthlyIncome,
@@ -74,14 +68,11 @@ function MonthlyExpenses() {
 
   const loadInitialData = async () => {
     try {
-      const [months, cats, accts] = await Promise.all([
-        getAvailableMonths(),
-        getCategories(),
-        getAccounts()
-      ])
-      setAvailableMonths(months)
-      setCategories(cats)
-      setAccounts(accts)
+      // Use combined endpoint - reduces 3 API calls to 1
+      const data = await getMonthlyInitialData()
+      setAvailableMonths(data.months)
+      setCategories(data.categories)
+      setAccounts(data.accounts)
     } catch (error) {
       console.error('Error loading initial data:', error)
     }
@@ -90,19 +81,13 @@ function MonthlyExpenses() {
   const loadMonthlyData = async () => {
     try {
       setLoading(true)
-      const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
-      const [expensesData, summaryData, allocationData, incomesData, totalData] = await Promise.all([
-        getMonthlyExpenses(selectedYear, selectedMonth),
-        getMonthlySummary(selectedYear, selectedMonth),
-        getMonthlyAccountAllocation(selectedYear, selectedMonth),
-        getMonthlyIncomes(monthStr),
-        getMonthlyIncomeTotal(monthStr)
-      ])
-      setExpenses(expensesData)
-      setSummary(summaryData)
-      setAccountAllocation(allocationData)
-      setMonthlyIncomes(incomesData)
-      setIncomeTotal(totalData.total || 0)
+      // Use combined endpoint - reduces 5 API calls to 1
+      const data = await getMonthlyAllData(selectedYear, selectedMonth)
+      setExpenses(data.expenses)
+      setSummary(data.summary)
+      setAccountAllocation(data.allocation)
+      setMonthlyIncomes(data.incomes)
+      setIncomeTotal(data.income_total.total || 0)
     } catch (error) {
       console.error('Error loading monthly data:', error)
     } finally {
@@ -458,27 +443,29 @@ function MonthlyExpenses() {
             <p className="flow-section-subtitle">Money flow to accounts</p>
           </div>
           <div className="allocation-flow-container">
-            {accountAllocation.allocations.map((allocation, index) => (
-              <div key={index} className="allocation-flow-row">
-                <div className="flow-amount">
-                  <span className="amount-value">{formatAmount(allocation.total_amount)}</span>
-                  <span className="amount-label">{allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}</span>
-                </div>
-                <div className="flow-arrow-container">
-                  <div className="flow-arrow">
-                    <div className="arrow-line"></div>
-                    <div className="arrow-head"></div>
-                    <div className="arrow-particles"></div>
+            {accountAllocation.allocations
+              .filter(allocation => allocation.total_amount > 0)
+              .map((allocation, index) => (
+                <div key={index} className="allocation-flow-row">
+                  <div className="flow-amount">
+                    <span className="amount-value">{formatAmount(allocation.total_amount)}</span>
+                    <span className="amount-label">{allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}</span>
+                  </div>
+                  <div className="flow-arrow-container">
+                    <div className="flow-arrow">
+                      <div className="arrow-line"></div>
+                      <div className="arrow-head"></div>
+                      <div className="arrow-particles"></div>
+                    </div>
+                  </div>
+                  <div className="flow-account">
+                    <span className="account-name">{allocation.account_name || 'Unassigned'}</span>
+                    {allocation.owner_name && (
+                      <span className="account-owner">{allocation.owner_name}</span>
+                    )}
                   </div>
                 </div>
-                <div className="flow-account">
-                  <span className="account-name">{allocation.account_name || 'Unassigned'}</span>
-                  {allocation.owner_name && (
-                    <span className="account-owner">{allocation.owner_name}</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -581,141 +568,130 @@ function MonthlyExpenses() {
       </div>
 
 
-      {/* Add Expense Buttons (only for current month) */}
-      {isCurrentMonth && !showAddForm && (
-        <div className="expense-actions">
-          <button onClick={handleGenerateExpenses} className="btn-generate">
-            Generate from Templates
-          </button>
-          <button onClick={() => setShowAddForm(true)} className="btn-add-expense">
-            + Add Expense
-          </button>
-        </div>
-      )}
-
-      {/* Add/Edit Expense Form */}
-      {showAddForm && isCurrentMonth && (
-        <div className="expense-form-card">
-          <h3>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h3>
-          <form onSubmit={handleSubmit} className="expense-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="date">Date</label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date || getDefaultDate()}
-                  onChange={handleFormChange}
-                  required
-                  max={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-31`}
-                  min={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="amount">Amount</label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleFormChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  className="form-input"
-                />
-              </div>
+      {/* Expenses Section */}
+      <div className="expenses-section">
+        <div className="section-header">
+          <h3>Expenses for {MONTH_NAMES[selectedMonth - 1]} {selectedYear}</h3>
+          {isCurrentMonth && (
+            <div className="expense-actions">
+              <button onClick={handleGenerateExpenses} className="btn-generate">
+                Generate from Templates
+              </button>
+              <button onClick={() => setShowAddForm(true)} className="btn-add-expense">
+                + Add Expense
+              </button>
             </div>
+          )}
+        </div>
 
-            <div className="form-row">
+        {/* Add/Edit Expense Form */}
+        {showAddForm && isCurrentMonth && (
+          <div className="expense-form-card">
+            <h4>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h4>
+            <form onSubmit={handleSubmit} className="expense-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="date">Date</label>
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={formData.date || getDefaultDate()}
+                    onChange={handleFormChange}
+                    required
+                    max={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-31`}
+                    min={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="amount">Amount</label>
+                  <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleFormChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="category_id">Category</label>
+                  <select
+                    id="category_id"
+                    name="category_id"
+                    value={formData.category_id}
+                    onChange={handleFormChange}
+                    required
+                    className="form-input"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subcategory_id">Subcategory (Optional)</label>
+                  <select
+                    id="subcategory_id"
+                    name="subcategory_id"
+                    value={formData.subcategory_id}
+                    onChange={handleFormChange}
+                    className="form-input"
+                    disabled={!formData.category_id || subcategories.length === 0}
+                  >
+                    <option value="">Select a subcategory</option>
+                    {subcategories.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="form-group">
-                <label htmlFor="category_id">Category</label>
+                <label htmlFor="account_id">Payment Account</label>
                 <select
-                  id="category_id"
-                  name="category_id"
-                  value={formData.category_id}
+                  id="account_id"
+                  name="account_id"
+                  value={formData.account_id}
                   onChange={handleFormChange}
                   required
                   className="form-input"
                 >
-                  <option value="">Select a category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
+                  <option value="">Select a payment account</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.owner_name})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="subcategory_id">Subcategory (Optional)</label>
-                <select
-                  id="subcategory_id"
-                  name="subcategory_id"
-                  value={formData.subcategory_id}
-                  onChange={handleFormChange}
-                  className="form-input"
-                  disabled={!formData.category_id || subcategories.length === 0}
-                >
-                  <option value="">Select a subcategory</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="form-actions">
+                <button type="submit" className="btn-submit">
+                  {editingExpense ? 'Update' : 'Add'} Expense
+                </button>
+                <button type="button" onClick={handleCancelForm} className="btn-cancel">
+                  Cancel
+                </button>
               </div>
-            </div>
+            </form>
+          </div>
+        )}
 
-            <div className="form-group">
-              <label htmlFor="account_id">Payment Account</label>
-              <select
-                id="account_id"
-                name="account_id"
-                value={formData.account_id}
-                onChange={handleFormChange}
-                required
-                className="form-input"
-              >
-                <option value="">Select a payment account</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name} ({account.owner_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="status"
-                  checked={formData.status}
-                  onChange={handleFormChange}
-                />
-                <span>Active</span>
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                {editingExpense ? 'Update Expense' : 'Save Expense'}
-              </button>
-              <button type="button" onClick={handleCancelForm} className="btn-secondary">
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Expenses List */}
-      <div className="expenses-list">
-        <h3>Expenses ({expenses.length})</h3>
         {expenses.length === 0 ? (
           <p className="empty-state">No expenses for this month</p>
         ) : (
@@ -726,7 +702,6 @@ function MonthlyExpenses() {
               <div className="col-subcategory">Subcategory</div>
               <div className="col-amount">Amount</div>
               <div className="col-account">Payment Account</div>
-              <div className="col-status">Status</div>
               {isCurrentMonth && <div className="col-actions">Actions</div>}
             </div>
             {expenses.map((expense) => (
@@ -736,11 +711,6 @@ function MonthlyExpenses() {
                 <div className="col-subcategory">{expense.subcategory_name || expense.subcategory || '-'}</div>
                 <div className="col-amount">{formatAmount(expense.amount)}</div>
                 <div className="col-account">{expense.account_name || '-'}</div>
-                <div className="col-status">
-                  <span className={`status-badge ${expense.status ? 'active' : 'inactive'}`}>
-                    {expense.status ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
                 {isCurrentMonth && (
                   <div className="col-actions">
                     <button onClick={() => handleEdit(expense)} className="btn-edit">

@@ -6,6 +6,7 @@ import Profile from './pages/Profile'
 import MonthlyExpenses from './pages/MonthlyExpenses'
 import ControlCenter from './pages/ControlCenter'
 import Management from './pages/Management'
+import Savings from './pages/Savings'
 import Navigation from './components/Navigation'
 import { CurrencyProvider } from './context/CurrencyContext'
 import './App.css'
@@ -39,6 +40,7 @@ function App() {
                       <Route path="/monthly" element={<MonthlyExpenses />} />
                       <Route path="/control-center" element={<ControlCenter />} />
                       <Route path="/management/*" element={<Management />} />
+                      <Route path="/savings" element={<Savings />} />
                       <Route path="/profile" element={<Profile />} />
                     </Routes>
                   </main>

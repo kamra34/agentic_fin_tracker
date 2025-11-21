@@ -243,6 +243,28 @@ async def get_available_months(
     return service.get_available_months(current_user.id)
 
 
+@router.get("/monthly/initial-data")
+async def get_monthly_initial_data(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all initial data needed for monthly expenses page - reduces network round-trips from 3 to 1"""
+    from app.services.category_service import CategoryService
+    from app.models.account import Account
+
+    expense_service = ExpenseService(db)
+    category_service = CategoryService(db)
+
+    # Query accounts directly (no separate service)
+    accounts = db.query(Account).filter(Account.user_id == current_user.id).all()
+
+    return {
+        "months": expense_service.get_available_months(current_user.id),
+        "categories": category_service.get_categories(current_user.id),
+        "accounts": accounts
+    }
+
+
 @router.get("/categories/structured")
 async def get_categories_structured(
     current_user: User = Depends(get_current_active_user),
@@ -263,6 +285,30 @@ async def get_monthly_account_allocation(
     """Get monthly expenses grouped by payment account"""
     service = ExpenseService(db)
     return service.get_monthly_account_allocation(current_user.id, year, month)
+
+
+@router.get("/monthly/all-data")
+async def get_monthly_all_data(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all monthly data in a single request - reduces network round-trips from 5 to 1"""
+    from app.services.income_service import IncomeService
+
+    expense_service = ExpenseService(db)
+    income_service = IncomeService(db)
+
+    month_str = f"{year}-{month:02d}"
+
+    return {
+        "expenses": expense_service.get_monthly_expenses(current_user.id, year, month),
+        "summary": expense_service.get_monthly_summary(current_user.id, year, month),
+        "allocation": expense_service.get_monthly_account_allocation(current_user.id, year, month),
+        "incomes": income_service.get_monthly_incomes(current_user.id, month_str),
+        "income_total": {"total": income_service.get_monthly_total(current_user.id, month_str)}
+    }
 
 
 # ========== GENERATE FROM TEMPLATES ==========

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { getDashboardStats, getIncomeTemplates, getExpenseTemplates } from '../services/api'
+import { getDashboardInitialData, getExpenseAnalytics } from '../services/api'
 import { useCurrency } from '../context/CurrencyContext'
+import ExpenseKPICard from '../components/ExpenseKPICard'
+import SavingsKPICard from '../components/SavingsKPICard'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -12,27 +14,37 @@ function Dashboard() {
   })
   const [incomeTemplates, setIncomeTemplates] = useState([])
   const [expenseTemplates, setExpenseTemplates] = useState([])
+  const [savingsSummary, setSavingsSummary] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchStats()
+    fetchAnalytics()
   }, [])
 
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const [dashboardData, incomesData, expensesData] = await Promise.all([
-        getDashboardStats(),
-        getIncomeTemplates(),
-        getExpenseTemplates()
-      ])
-      setStats(dashboardData)
-      setIncomeTemplates(incomesData)
-      setExpenseTemplates(expensesData)
+      // Use combined endpoint - reduces 3 API calls to 1
+      const data = await getDashboardInitialData()
+      setStats(data.stats)
+      setIncomeTemplates(data.income_templates)
+      setExpenseTemplates(data.expense_templates)
+      setSavingsSummary(data.savings_summary)
     } catch (error) {
       console.error('Error fetching stats:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAnalytics = async () => {
+    try {
+      const data = await getExpenseAnalytics()
+      setAnalytics(data)
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
     }
   }
 
@@ -52,11 +64,26 @@ function Dashboard() {
     return <div className="loading">Loading...</div>
   }
 
+  const getTotalSavingsValue = () => {
+    return savingsSummary?.total_value || 0
+  }
+
+  const getTotalInvestments = () => {
+    if (!savingsSummary || !savingsSummary.accounts_by_type) return 0
+    const investment = savingsSummary.accounts_by_type['investment']
+    const crypto = savingsSummary.accounts_by_type['crypto']
+    return (investment?.value || 0) + (crypto?.value || 0)
+  }
+
+  const getTotalSavingsOnly = () => {
+    if (!savingsSummary || !savingsSummary.accounts_by_type) return 0
+    const bankSavings = savingsSummary.accounts_by_type['bank_savings']
+    return bankSavings?.value || 0
+  }
+
   return (
     <div className="dashboard">
-      <h2 className="page-title">Dashboard</h2>
-
-      {/* KPI Dashboard */}
+      {/* First Row KPIs */}
       <div className="kpi-dashboard">
         <div className="kpi-card kpi-primary">
           <div className="kpi-label">MONTHLY INCOME</div>
@@ -65,7 +92,7 @@ function Dashboard() {
         </div>
 
         <div className="kpi-card kpi-danger">
-          <div className="kpi-label">RECURRING EXPENSES</div>
+          <div className="kpi-label">MONTHLY RECURRING EXPENSES</div>
           <div className="kpi-value">{formatAmount(calculateTotalRecurringExpenses())}</div>
           <div className="kpi-sublabel">{expenseTemplates.length} monthly obligations</div>
         </div>
@@ -77,21 +104,51 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Original Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card expense">
-          <h3>Total Expenses</h3>
-          <p className="stat-value">{formatAmount(stats.total_expenses || 0)}</p>
+      {/* Second Row KPIs */}
+      <div className="kpi-dashboard kpi-dashboard-secondary">
+        <div className="kpi-card kpi-investments">
+          <div className="kpi-label">TOTAL INVESTMENTS</div>
+          <div className="kpi-value">{formatAmount(getTotalInvestments())}</div>
+          <div className="kpi-sublabel">Stocks & Crypto</div>
         </div>
-        <div className="stat-card transactions">
-          <h3>Total Count</h3>
-          <p className="stat-value">{stats.expense_count || 0}</p>
+
+        <div className="kpi-card kpi-savings">
+          <div className="kpi-label">TOTAL SAVINGS</div>
+          <div className="kpi-value">{formatAmount(getTotalSavingsOnly())}</div>
+          <div className="kpi-sublabel">Bank savings accounts</div>
         </div>
-        <div className="stat-card transactions">
-          <h3>Active Expenses</h3>
-          <p className="stat-value">{stats.active_expense_count || 0}</p>
+
+        <div className={`kpi-card ${savingsSummary?.total_profit_loss >= 0 ? 'kpi-profit' : 'kpi-loss'}`}>
+          <div className="kpi-label">INVESTMENT RETURN</div>
+          <div className="kpi-value">
+            {savingsSummary?.total_profit_loss >= 0 ? '+' : ''}{formatAmount(savingsSummary?.total_profit_loss || 0)}
+          </div>
+          <div className="kpi-sublabel">
+            {savingsSummary?.total_profit_loss >= 0 ? '+' : ''}{savingsSummary?.profit_loss_percentage || 0}% return
+          </div>
         </div>
       </div>
+
+      {/* Savings & Investments Section */}
+      {savingsSummary && (
+        <div className="analytics-section">
+          <h3 className="section-title">Savings & Investments</h3>
+          <div className="analytics-grid">
+            <SavingsKPICard savingsSummary={savingsSummary} />
+          </div>
+        </div>
+      )}
+
+      {/* Rich Expense Analytics KPI Card */}
+      {analytics && (
+        <div className="analytics-section">
+          <h3 className="section-title">Expense Analytics</h3>
+          <div className="analytics-grid">
+            <ExpenseKPICard analytics={analytics} />
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

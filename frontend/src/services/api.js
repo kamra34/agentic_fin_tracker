@@ -8,8 +8,11 @@ function getAuthHeaders() {
   }
 }
 
-// Performance monitoring helper
+// Performance monitoring helper - only logs in development
 const logPerformance = (endpoint, startTime, response) => {
+  // Only log in development mode
+  if (import.meta.env.MODE !== 'development') return
+
   const endTime = performance.now()
   const duration = (endTime - startTime).toFixed(2)
   const serverTime = response.headers.get('X-Process-Time')
@@ -19,9 +22,8 @@ const logPerformance = (endpoint, startTime, response) => {
     console.warn(`   Total: ${duration}ms | Server: ${serverTime || 'N/A'}`)
   } else if (duration > 500) {
     console.log(`⚡ API: ${endpoint} - ${duration}ms (Server: ${serverTime || 'N/A'})`)
-  } else {
-    console.log(`✅ API: ${endpoint} - ${duration}ms (Server: ${serverTime || 'N/A'})`)
   }
+  // Removed success logging to reduce noise
 }
 
 // Wrapper for fetch with timing
@@ -29,7 +31,10 @@ async function timedFetch(url, options = {}) {
   const startTime = performance.now()
   const endpoint = url.replace(API_BASE_URL, '')
 
-  console.log(`🚀 API Request: ${options.method || 'GET'} ${endpoint}`)
+  // Only log in development mode
+  if (import.meta.env.MODE === 'development') {
+    console.log(`🚀 API Request: ${options.method || 'GET'} ${endpoint}`)
+  }
 
   const response = await fetch(url, options)
 
@@ -112,6 +117,20 @@ export async function updateProfile(data) {
 // Dashboard API
 export async function getDashboardStats() {
   const response = await timedFetch(`${API_BASE_URL}/api/dashboard/stats`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getDashboardInitialData() {
+  const response = await timedFetch(`${API_BASE_URL}/api/dashboard/initial-data`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getExpenseAnalytics() {
+  const response = await timedFetch(`${API_BASE_URL}/api/dashboard/expense-analytics`, {
     headers: getAuthHeaders()
   })
   return handleResponse(response)
@@ -205,6 +224,20 @@ export async function getCategoriesStructured() {
 
 export async function getMonthlyAccountAllocation(year, month) {
   const response = await timedFetch(`${API_BASE_URL}/api/expenses/monthly/account-allocation?year=${year}&month=${month}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getMonthlyInitialData() {
+  const response = await timedFetch(`${API_BASE_URL}/api/expenses/monthly/initial-data`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getMonthlyAllData(year, month) {
+  const response = await timedFetch(`${API_BASE_URL}/api/expenses/monthly/all-data?year=${year}&month=${month}`, {
     headers: getAuthHeaders()
   })
   return handleResponse(response)
@@ -496,3 +529,88 @@ export const getTransaction = getExpense
 export const createTransaction = createExpense
 export const updateTransaction = updateExpense
 export const deleteTransaction = deleteExpense
+
+
+// ===== Savings API =====
+
+// Savings Accounts
+export async function getSavingsAccounts() {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getSavingsAccount(accountId) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts/${accountId}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createSavingsAccount(data) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  })
+  return handleResponse(response)
+}
+
+export async function updateSavingsAccount(accountId, data) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts/${accountId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  })
+  return handleResponse(response)
+}
+
+export async function deleteSavingsAccount(accountId) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts/${accountId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+// Savings Transactions
+export async function getSavingsTransactions(accountId) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts/${accountId}/transactions`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function createSavingsTransaction(data) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/transactions`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  })
+  return handleResponse(response)
+}
+
+export async function updateSavingsTransaction(transactionId, data) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/transactions/${transactionId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  })
+  return handleResponse(response)
+}
+
+export async function deleteSavingsTransaction(transactionId) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/transactions/${transactionId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getSavingsAccountStats(accountId) {
+  const response = await timedFetch(`${API_BASE_URL}/api/savings/accounts/${accountId}/stats`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}

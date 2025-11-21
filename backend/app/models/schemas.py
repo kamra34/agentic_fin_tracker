@@ -20,6 +20,12 @@ class UserUpdate(BaseModel):
     currency: Optional[str] = None
     password: Optional[str] = Field(None, min_length=4)
     is_active: Optional[bool] = None
+    household_members: Optional[int] = None
+    num_vehicles: Optional[int] = None
+    housing_type: Optional[str] = None
+    house_size_sqm: Optional[int] = None
+    monthly_income_goal: Optional[float] = None
+    monthly_savings_goal: Optional[float] = None
 
 
 class UserResponse(UserBase):
@@ -28,6 +34,12 @@ class UserResponse(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    household_members: Optional[int] = None
+    num_vehicles: Optional[int] = None
+    housing_type: Optional[str] = None
+    house_size_sqm: Optional[int] = None
+    monthly_income_goal: Optional[float] = None
+    monthly_savings_goal: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -301,3 +313,71 @@ class ExpenseTemplateResponse(ExpenseTemplateBase):
 
     class Config:
         from_attributes = True
+
+
+# Savings Account Schemas
+class SavingsAccountBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Savings account name")
+    account_type: str = Field(..., min_length=1, max_length=50, description="Account type (investment, crypto, bank_savings, etc.)")
+    description: Optional[str] = Field(None, max_length=255)
+
+
+class SavingsAccountCreate(SavingsAccountBase):
+    pass
+
+
+class SavingsAccountUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    account_type: Optional[str] = Field(None, min_length=1, max_length=50)
+    description: Optional[str] = Field(None, max_length=255)
+    is_active: Optional[int] = None
+
+
+class SavingsAccountResponse(SavingsAccountBase):
+    id: int
+    user_id: int
+    is_active: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Savings Transaction Schemas
+class SavingsTransactionBase(BaseModel):
+    transaction_type: str = Field(..., description="Transaction type: deposit, withdrawal, value_update")
+    amount: float = Field(..., ge=0, description="Amount deposited/withdrawn or current value")
+    transaction_date: datetime = Field(..., description="Date of transaction")
+    notes: Optional[str] = Field(None, max_length=255)
+
+
+class SavingsTransactionCreate(SavingsTransactionBase):
+    account_id: int = Field(..., description="Savings account ID")
+
+
+class SavingsTransactionUpdate(BaseModel):
+    transaction_type: Optional[str] = None
+    amount: Optional[float] = Field(None, ge=0)
+    transaction_date: Optional[datetime] = None
+    notes: Optional[str] = Field(None, max_length=255)
+
+
+class SavingsTransactionResponse(SavingsTransactionBase):
+    id: int
+    account_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Savings Account with Stats
+class SavingsAccountWithStats(SavingsAccountResponse):
+    total_deposits: float
+    total_withdrawals: float
+    current_value: float
+    profit_loss: float
+    profit_loss_percentage: float
+    transaction_count: int
+    transactions: List[SavingsTransactionResponse] = []

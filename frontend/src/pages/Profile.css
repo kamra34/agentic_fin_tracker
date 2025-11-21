@@ -1,129 +1,678 @@
+/* ============================================
+   PROFILE PAGE - PROFESSIONAL REDESIGN
+   Complete financial profile with personal metrics
+   ============================================ */
+
 .profile {
-  padding: 1rem 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
-.profile-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+/* ============================================
+   PROFILE HEADER
+   ============================================ */
+.profile-header {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  padding: 4rem 3.5rem 3rem;
+  border-radius: var(--radius-xl);
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  border-top: 4px solid transparent;
+  border-image: var(--gradient-primary) 1;
+  animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.profile-header-content {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: var(--shadow-lg), 0 0 40px rgba(0, 102, 204, 0.3);
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: var(--shadow-xl), 0 0 60px rgba(0, 102, 204, 0.5);
+}
+
+.profile-avatar:hover::after {
+  opacity: 0.3;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.profile-header-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  text-shadow: 0 0 30px rgba(0, 102, 204, 0.2);
+}
+
+.profile-email {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-email svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-color);
+}
+
+.profile-meta {
+  display: flex;
   gap: 2rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
+.profile-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profile-meta-item:hover {
+  background: rgba(0, 102, 204, 0.15);
+  border-color: rgba(0, 102, 204, 0.3);
+  transform: translateY(-2px);
+}
+
+.profile-meta-item svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-color);
+}
+
+.profile-meta-item span {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   PROFILE SECTIONS GRID
+   ============================================ */
+.profile-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+/* ============================================
+   PROFILE SECTION CARDS
+   ============================================ */
 .profile-section {
-  background-color: var(--bg-primary);
-  padding: 2rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  padding: 2.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+  border-top: 3px solid transparent;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-section:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl), 0 0 40px rgba(0, 102, 204, 0.1);
+}
+
+.profile-section:hover::before {
+  transform: scaleX(1);
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(0, 102, 204, 0.1);
+}
+
+.profile-section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(0, 102, 204, 0.3);
+  transition: all 0.3s ease;
+}
+
+.profile-section:hover .profile-section-icon {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(0, 102, 204, 0.5);
+}
+
+.profile-section-icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .profile-section h3 {
-  font-size: 1.25rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
   color: var(--text-primary);
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--border-color);
+  flex: 1;
 }
 
+/* ============================================
+   INFO FIELDS (Read-only display)
+   ============================================ */
 .info-field {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
+  padding: 1.25rem;
+  background: rgba(0, 102, 204, 0.05);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--accent-color);
+  transition: all 0.3s ease;
+}
+
+.info-field:hover {
+  background: rgba(0, 102, 204, 0.08);
+  transform: translateX(4px);
+}
+
+.info-field:last-child {
+  margin-bottom: 0;
 }
 
 .info-field label {
   display: block;
   font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
 }
 
 .info-field p {
-  font-size: 1rem;
+  font-size: 1.125rem;
+  font-weight: 500;
   color: var(--text-primary);
   margin: 0;
 }
 
+/* ============================================
+   FORM GROUPS
+   ============================================ */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group:last-of-type {
+  margin-bottom: 2.5rem;
 }
 
 .form-group label {
   display: block;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
   color: var(--text-primary);
+  letter-spacing: 0.3px;
 }
 
+.form-group label .required {
+  color: #ef4444;
+  margin-left: 0.25rem;
+}
+
+/* ============================================
+   FORM INPUTS
+   ============================================ */
 .form-input,
 .form-select {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid rgba(0, 102, 204, 0.2);
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  transition: border-color 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
 }
 
 .form-input:focus,
 .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1), 0 4px 12px rgba(0, 102, 204, 0.15);
+  transform: translateY(-2px);
+  background-color: var(--bg-secondary);
+}
+
+.form-input:hover:not(:focus),
+.form-select:hover:not(:focus) {
+  border-color: rgba(0, 102, 204, 0.3);
 }
 
 .form-select {
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%2300b8d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 3rem;
 }
 
+.form-select option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+/* ============================================
+   INPUT GROUPS (with icons or units)
+   ============================================ */
+.input-group {
+  position: relative;
+}
+
+.input-group-icon {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.input-group .form-input {
+  padding-left: 3.25rem;
+}
+
+.input-group .form-input:focus ~ .input-group-icon {
+  color: var(--primary-color);
+}
+
+.input-group-unit {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* ============================================
+   FIELD HINTS
+   ============================================ */
 .field-hint {
   font-size: 0.875rem;
   color: var(--text-secondary);
-  margin-top: 0.5rem;
+  margin-top: 0.625rem;
   margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.8;
 }
 
+.field-hint svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-color);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
 .btn-primary {
-  background-color: var(--primary-color);
+  background: var(--gradient-primary);
   color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  padding: 1rem 2.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   border: none;
-  font-size: 1rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(0, 102, 204, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #4338ca;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 40px rgba(0, 102, 204, 0.5);
+}
+
+.btn-primary:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(-1px) scale(1);
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
+.profile-section .btn-primary {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   MESSAGES
+   ============================================ */
 .message {
-  padding: 1rem;
-  border-radius: 0.375rem;
-  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 500;
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-md);
+}
+
+.message svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .message.success {
-  background-color: #d1fae5;
-  color: #065f46;
-  border: 1px solid #059669;
+  background: linear-gradient(135deg, rgba(0, 200, 83, 0.15) 0%, rgba(94, 252, 130, 0.1) 100%);
+  color: #5efc82;
+  border: 2px solid rgba(0, 200, 83, 0.3);
 }
 
 .message.error {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #dc2626;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(252, 165, 165, 0.1) 100%);
+  color: #fca5a5;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   FINANCIAL METRICS GRID
+   ============================================ */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: rgba(0, 102, 204, 0.05);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid rgba(0, 102, 204, 0.1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.metric-card:hover {
+  background: rgba(0, 102, 204, 0.08);
+  border-color: rgba(0, 102, 204, 0.2);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.metric-card:hover::before {
+  transform: scaleX(1);
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   TWO-COLUMN FORM LAYOUT
+   ============================================ */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1200px) {
+  .profile-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .profile-container {
+  .profile-header {
+    padding: 2.5rem 2rem;
+  }
+
+  .profile-header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .profile-name {
+    font-size: 2.25rem;
+  }
+
+  .profile-meta {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .profile-meta-item {
+    justify-content: center;
+  }
+
+  .profile-section {
+    padding: 2rem 1.5rem;
+  }
+
+  .profile-section h3 {
+    font-size: 1.5rem;
+  }
+
+  .metrics-grid {
     grid-template-columns: 1fr;
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-header {
+    padding: 2rem 1.5rem;
+  }
+
+  .profile-name {
+    font-size: 2rem;
+  }
+
+  .profile-section {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .btn-primary {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
   }
 }

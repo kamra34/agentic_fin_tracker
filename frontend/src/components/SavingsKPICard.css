@@ -1,0 +1,331 @@
+/* ============================================
+   SAVINGS KPI CARD
+   ============================================ */
+
+.savings-kpi-card {
+  background: linear-gradient(135deg, rgba(0, 184, 212, 0.05) 0%, rgba(76, 175, 80, 0.05) 100%);
+  border: 1px solid rgba(0, 184, 212, 0.2);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.5s ease;
+}
+
+.savings-kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 184, 212, 0.15);
+}
+
+/* KPI Header */
+.savings-kpi-card .kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.savings-kpi-card .kpi-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(0, 184, 212, 1);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.savings-kpi-card .kpi-accounts-count {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Main Value */
+.savings-kpi-card .kpi-main-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  line-height: 1;
+  animation: fadeIn 0.6s ease 0.2s both;
+}
+
+/* Sub Stats */
+.savings-kpi-card .kpi-sub-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.savings-kpi-card .sub-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  transition: transform 0.3s ease;
+}
+
+.savings-kpi-card .sub-stat:hover {
+  transform: scale(1.05);
+}
+
+.savings-kpi-card .sub-stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.savings-kpi-card .sub-stat.profit .sub-stat-value {
+  color: var(--success-color);
+}
+
+.savings-kpi-card .sub-stat.loss .sub-stat-value {
+  color: var(--danger-color);
+}
+
+.savings-kpi-card .sub-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.savings-kpi-card .sub-stat-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border-color);
+}
+
+/* No Data Message */
+.savings-kpi-card .no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.savings-kpi-card .no-data-message p {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.savings-kpi-card .no-data-hint {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+/* Portfolio Breakdown */
+.kpi-breakdown {
+  margin-top: 2rem;
+}
+
+.breakdown-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.breakdown-row {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.breakdown-row:hover {
+  background: var(--bg-elevated);
+  transform: translateX(4px);
+}
+
+.breakdown-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.breakdown-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.breakdown-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.breakdown-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.breakdown-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.breakdown-amounts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.breakdown-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.breakdown-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.breakdown-percentage {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.breakdown-pl {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.breakdown-pl.profit {
+  color: var(--success-color);
+}
+
+.breakdown-pl.loss {
+  color: var(--danger-color);
+}
+
+.breakdown-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.breakdown-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 184, 212, 0.8) 0%, rgba(76, 175, 80, 0.8) 100%);
+  transition: width 0.6s ease;
+  border-radius: 3px;
+}
+
+/* Performance Summary */
+.kpi-performance {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.performance-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.performance-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.performance-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.performance-value.profit {
+  color: var(--success-color);
+}
+
+.performance-value.loss {
+  color: var(--danger-color);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .savings-kpi-card {
+    padding: 1.5rem;
+  }
+
+  .savings-kpi-card .kpi-main-value {
+    font-size: 2.25rem;
+  }
+
+  .savings-kpi-card .kpi-sub-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .savings-kpi-card .sub-stat-divider {
+    display: none;
+  }
+
+  .breakdown-amounts {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

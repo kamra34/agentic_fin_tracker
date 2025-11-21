@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.core.config import settings
-from app.api import auth, expenses, dashboard, categories, accounts, incomes
-from app.models import user, expense, account, category, income  # Import all models for SQLAlchemy
+from app.api import auth, expenses, dashboard, categories, accounts, incomes, savings
+from app.models import user, expense, account, category, income, savings as savings_models  # Import all models for SQLAlchemy
 import json
 import time
 import logging
@@ -70,6 +70,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"]
 app.include_router(categories.router)
 app.include_router(accounts.router)
 app.include_router(incomes.router)
+app.include_router(savings.router, prefix="/api")
 
 
 @app.get("/")

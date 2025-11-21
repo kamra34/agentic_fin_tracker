@@ -16,20 +16,32 @@ export const CURRENCY_SYMBOLS = {
 }
 
 export function CurrencyProvider({ children }) {
-  const [currency, setCurrency] = useState('SEK')
-  const [symbol, setSymbol] = useState('kr')
-  const [loading, setLoading] = useState(true)
+  const [currency, setCurrency] = useState(() => {
+    // Load from localStorage on initial mount to avoid API call
+    return localStorage.getItem('userCurrency') || 'SEK'
+  })
+  const [symbol, setSymbol] = useState(() => {
+    const savedCurrency = localStorage.getItem('userCurrency') || 'SEK'
+    return CURRENCY_SYMBOLS[savedCurrency] || savedCurrency
+  })
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    loadUserCurrency()
+    // Only load from API if not already in localStorage
+    const savedCurrency = localStorage.getItem('userCurrency')
+    if (!savedCurrency) {
+      loadUserCurrency()
+    }
   }, [])
 
   const loadUserCurrency = async () => {
     try {
+      setLoading(true)
       const user = await getCurrentUser()
       if (user && user.currency) {
         setCurrency(user.currency)
         setSymbol(CURRENCY_SYMBOLS[user.currency] || user.currency)
+        localStorage.setItem('userCurrency', user.currency)
       }
     } catch (error) {
       console.error('Error loading currency:', error)

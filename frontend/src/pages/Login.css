@@ -9,7 +9,7 @@
   background: var(--bg-primary);
 }
 
-/* Animated Background */
+/* Animated Background - Deep Blue/Indigo */
 .login-container::before {
   content: '';
   position: absolute;
@@ -17,9 +17,9 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 70% 50%, rgba(167, 139, 250, 0.1) 0%, transparent 50%);
-  animation: rotate 20s linear infinite;
+  background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(20, 184, 166, 0.06) 0%, transparent 50%);
+  animation: rotate 25s linear infinite;
   pointer-events: none;
 }
 
@@ -32,18 +32,18 @@
   }
 }
 
-/* Floating Elements */
+/* Floating Elements - Deep Blue */
 .login-container::after {
   content: '';
   position: absolute;
   top: 10%;
   right: 15%;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
   border-radius: 50%;
-  filter: blur(40px);
-  animation: float 8s ease-in-out infinite;
+  filter: blur(60px);
+  animation: float 10s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -58,17 +58,18 @@
 
 .login-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  padding: 3rem;
+  backdrop-filter: blur(30px) saturate(180%);
+  padding: 3.5rem;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+              inset 0 1px 1px rgba(255, 255, 255, 0.08),
+              0 0 0 1px rgba(59, 130, 246, 0.1);
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   border: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.6s ease-out;
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fadeInUp {
@@ -91,33 +92,33 @@
 }
 
 .shape-1 {
-  width: 100px;
-  height: 100px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
   top: 15%;
   left: 10%;
-  animation: float 10s ease-in-out infinite;
-  filter: blur(30px);
-}
-
-.shape-2 {
-  width: 150px;
-  height: 150px;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.2) 0%, transparent 70%);
-  bottom: 20%;
-  right: 15%;
-  animation: float 12s ease-in-out infinite reverse;
+  animation: float 12s ease-in-out infinite;
   filter: blur(40px);
 }
 
+.shape-2 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, transparent 70%);
+  bottom: 20%;
+  right: 15%;
+  animation: float 15s ease-in-out infinite reverse;
+  filter: blur(50px);
+}
+
 .shape-3 {
-  width: 80px;
-  height: 80px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
   top: 60%;
   left: 20%;
-  animation: float 8s ease-in-out infinite;
-  filter: blur(25px);
+  animation: float 10s ease-in-out infinite;
+  filter: blur(35px);
 }
 
 /* Logo/Brand Section */
@@ -144,14 +145,14 @@
 }
 
 .login-card h1 {
-  margin-bottom: 0.5rem;
-  font-size: 2.5rem;
-  font-weight: 800;
+  margin-bottom: 0.75rem;
+  font-size: 2.75rem;
+  font-weight: 700;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   position: relative;
   display: inline-block;
 }
@@ -159,9 +160,9 @@
 .login-card h2 {
   margin-top: 0.5rem;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
 }
 
 /* Error Message */
@@ -227,7 +228,7 @@
 
 .login-card .form-group input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
   background-color: var(--bg-tertiary);
   transform: translateY(-2px);
 }
@@ -334,7 +335,7 @@
 }
 
 .register-link:hover {
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: rgba(59, 130, 246, 0.1);
   gap: 0.75rem;
 }
 

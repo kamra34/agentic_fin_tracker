@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -17,9 +17,18 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Personal finance metrics
+    household_members = Column(Integer, nullable=True)
+    num_vehicles = Column(Integer, nullable=True)
+    housing_type = Column(String(50), nullable=True)
+    house_size_sqm = Column(Integer, nullable=True)
+    monthly_income_goal = Column(Float, nullable=True)
+    monthly_savings_goal = Column(Float, nullable=True)
+
     expenses = relationship("Expense", back_populates="user")
     accounts = relationship("Account", back_populates="user")
     categories = relationship("Category", back_populates="user")
     income_templates = relationship("IncomeTemplate", back_populates="user")
     monthly_incomes = relationship("MonthlyIncome", back_populates="user")
     expense_templates = relationship("ExpenseTemplate", back_populates="user")
+    savings_accounts = relationship("SavingsAccount", back_populates="user")
