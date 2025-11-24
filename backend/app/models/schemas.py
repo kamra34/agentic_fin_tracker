@@ -63,6 +63,7 @@ class ExpenseBase(BaseModel):
     date: date
     category_id: int
     subcategory_id: Optional[int] = None
+    subcategory: Optional[str] = Field(None, max_length=50, description="Custom subcategory text (alternative to subcategory_id)")
     amount: Optional[float] = Field(None, ge=0)
     status: Optional[bool] = True
 
@@ -87,6 +88,7 @@ class ExpenseUpdate(BaseModel):
     date: Optional[date] = None
     category_id: Optional[int] = None
     subcategory_id: Optional[int] = None
+    subcategory: Optional[str] = Field(None, max_length=50, description="Custom subcategory text (alternative to subcategory_id)")
     amount: Optional[float] = Field(None, ge=0)
     status: Optional[bool] = None
     account_id: Optional[int] = Field(None, description="Payment account from which expense is deducted")

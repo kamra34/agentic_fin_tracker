@@ -45,6 +45,7 @@ function MonthlyExpenses() {
     date: '',
     category_id: '',
     subcategory_id: '',
+    custom_subcategory: '', // For manual text entry
     amount: '',
     status: true,
     account_id: ''
@@ -169,9 +170,21 @@ function MonthlyExpenses() {
     try {
       const expenseData = {
         category_id: parseInt(formData.category_id),
-        subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
         amount: parseFloat(formData.amount),
         account_id: parseInt(formData.account_id)
+      }
+
+      // Handle subcategory: use custom text if provided, otherwise use selected ID
+      if (formData.custom_subcategory && formData.custom_subcategory.trim()) {
+        // User entered custom text - use the old text field
+        expenseData.subcategory = formData.custom_subcategory.trim()
+        expenseData.subcategory_id = null
+      } else if (formData.subcategory_id) {
+        // User selected from dropdown
+        expenseData.subcategory_id = parseInt(formData.subcategory_id)
+      } else {
+        // No subcategory
+        expenseData.subcategory_id = null
       }
 
       // Only include date and status for create operations, not updates
@@ -206,6 +219,7 @@ function MonthlyExpenses() {
       date: expense.date,
       category_id: expense.category_id?.toString() || '',
       subcategory_id: expense.subcategory_id?.toString() || '',
+      custom_subcategory: expense.subcategory || '', // Load custom text if exists
       amount: expense.amount.toString(),
       status: expense.status !== undefined ? expense.status : true,
       account_id: expense.account_id?.toString() || ''
@@ -246,6 +260,7 @@ function MonthlyExpenses() {
       date: '',
       category_id: '',
       subcategory_id: '',
+      custom_subcategory: '',
       amount: '',
       status: true,
       account_id: ''
@@ -857,9 +872,15 @@ function MonthlyExpenses() {
                     id="modal-subcategory_id"
                     name="subcategory_id"
                     value={formData.subcategory_id}
-                    onChange={handleFormChange}
+                    onChange={(e) => {
+                      handleFormChange(e)
+                      // Clear custom text when selecting from dropdown
+                      if (e.target.value) {
+                        setFormData(prev => ({ ...prev, custom_subcategory: '' }))
+                      }
+                    }}
                     className="form-input"
-                    disabled={!formData.category_id || subcategories.length === 0}
+                    disabled={!formData.category_id || (subcategories.length === 0 && !formData.custom_subcategory)}
                   >
                     <option value="">Select a subcategory</option>
                     {subcategories.map((sub) => (
@@ -868,6 +889,25 @@ function MonthlyExpenses() {
                       </option>
                     ))}
                   </select>
+                  <div style={{ margin: '0.5rem 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    — or —
+                  </div>
+                  <input
+                    type="text"
+                    id="modal-custom-subcategory"
+                    name="custom_subcategory"
+                    value={formData.custom_subcategory}
+                    onChange={(e) => {
+                      handleFormChange(e)
+                      // Clear dropdown when typing custom text
+                      if (e.target.value) {
+                        setFormData(prev => ({ ...prev, subcategory_id: '' }))
+                      }
+                    }}
+                    placeholder="Or type custom subcategory..."
+                    className="form-input"
+                    disabled={!formData.category_id}
+                  />
                 </div>
               </div>
 
