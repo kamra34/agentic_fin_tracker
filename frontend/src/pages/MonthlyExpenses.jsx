@@ -621,120 +621,12 @@ function MonthlyExpenses() {
               <button onClick={handleGenerateExpenses} className="btn-generate">
                 Generate from Templates
               </button>
-              <button onClick={() => setShowAddForm(true)} className="btn-add-expense">
+              <button onClick={() => setShowExpenseModal(true)} className="btn-add-expense">
                 + Add Expense
               </button>
             </div>
           )}
         </div>
-
-        {/* Add Expense Form */}
-        {showAddForm && !editingExpense && isCurrentMonth && (
-          <div className="expense-form-card">
-            <h4>Add New Expense</h4>
-            <form onSubmit={handleSubmit} className="expense-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="date">Date</label>
-                  <input
-                    type="date"
-                    id="date"
-                    name="date"
-                    value={formData.date || getDefaultDate()}
-                    onChange={handleFormChange}
-                    required
-                    max={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-31`}
-                    min={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="amount">Amount</label>
-                  <input
-                    type="number"
-                    id="amount"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleFormChange}
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="category_id">Category</label>
-                  <select
-                    id="category_id"
-                    name="category_id"
-                    value={formData.category_id}
-                    onChange={handleFormChange}
-                    required
-                    className="form-input"
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subcategory_id">Subcategory (Optional)</label>
-                  <select
-                    id="subcategory_id"
-                    name="subcategory_id"
-                    value={formData.subcategory_id}
-                    onChange={handleFormChange}
-                    className="form-input"
-                    disabled={!formData.category_id || subcategories.length === 0}
-                  >
-                    <option value="">Select a subcategory</option>
-                    {subcategories.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="account_id">Payment Account</label>
-                <select
-                  id="account_id"
-                  name="account_id"
-                  value={formData.account_id}
-                  onChange={handleFormChange}
-                  required
-                  className="form-input"
-                >
-                  <option value="">Select a payment account</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name} ({account.owner_name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn-submit">
-                  Add Expense
-                </button>
-                <button type="button" onClick={handleCancelForm} className="btn-cancel">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* Filters Section */}
         {expenses.length > 0 && (
@@ -894,12 +786,12 @@ function MonthlyExpenses() {
         </div>
       )}
 
-      {/* Edit Expense Modal */}
+      {/* Add/Edit Expense Modal */}
       {showExpenseModal && (
         <div className="modal-overlay" onClick={handleCancelForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Edit Expense</h3>
+              <h3>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h3>
               <button className="modal-close" onClick={handleCancelForm}>
                 &times;
               </button>
@@ -1003,7 +895,7 @@ function MonthlyExpenses() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Update Expense
+                  {editingExpense ? 'Update' : 'Add'} Expense
                 </button>
               </div>
             </form>
