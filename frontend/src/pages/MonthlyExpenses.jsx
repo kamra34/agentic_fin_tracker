@@ -167,8 +167,12 @@ function MonthlyExpenses() {
         category_id: parseInt(formData.category_id),
         subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
         amount: parseFloat(formData.amount),
-        status: formData.status,
         account_id: parseInt(formData.account_id)
+      }
+
+      // Only include status for create operations, not updates
+      if (!editingExpense) {
+        expenseData.status = formData.status
       }
 
       if (editingExpense) {

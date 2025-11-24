@@ -60,6 +60,8 @@ function Management() {
   // Expense template state
   const [expenseTemplates, setExpenseTemplates] = useState([])
   const [showExpenseTemplateForm, setShowExpenseTemplateForm] = useState(false)
+  const [showExpenseTemplateModal, setShowExpenseTemplateModal] = useState(false)
+  const [showIncomeModal, setShowIncomeModal] = useState(false)
   const [expenseTemplateFormData, setExpenseTemplateFormData] = useState({
     name: '',
     amount: '',
@@ -167,6 +169,7 @@ function Management() {
         })
       }
       setShowIncomeForm(false)
+      setShowIncomeModal(false)
       setIncomeFormData({ source_name: '', current_amount: '' })
       await loadData()
     } catch (error) {
@@ -181,7 +184,7 @@ function Management() {
       current_amount: income.current_amount.toString()
     })
     setEditingIncome(income)
-    setShowIncomeForm(true)
+    setShowIncomeModal(true)
   }
 
   const handleDeleteIncome = async (incomeId) => {
@@ -199,6 +202,7 @@ function Management() {
   const handleCancelIncomeEdit = () => {
     setEditingIncome(null)
     setShowIncomeForm(false)
+    setShowIncomeModal(false)
     setIncomeFormData({ source_name: '', current_amount: '' })
   }
 
@@ -222,6 +226,7 @@ function Management() {
       }
 
       setShowExpenseTemplateForm(false)
+      setShowExpenseTemplateModal(false)
       setExpenseTemplateFormData({
         name: '',
         amount: '',
@@ -245,7 +250,7 @@ function Management() {
       account_id: template.account_id ? template.account_id.toString() : ''
     })
     setEditingExpenseTemplate(template)
-    setShowExpenseTemplateForm(true)
+    setShowExpenseTemplateModal(true)
   }
 
   const handleDeleteExpenseTemplate = async (templateId) => {
@@ -263,6 +268,7 @@ function Management() {
   const handleCancelExpenseTemplateEdit = () => {
     setEditingExpenseTemplate(null)
     setShowExpenseTemplateForm(false)
+    setShowExpenseTemplateModal(false)
     setExpenseTemplateFormData({
       name: '',
       amount: '',
@@ -500,7 +506,7 @@ function Management() {
           </button>
         </div>
 
-        {showIncomeForm && (
+        {showIncomeForm && !editingIncome && (
           <div className="form-card">
             <form onSubmit={handleIncomeSubmit} className="management-form">
               <div className="form-group">
@@ -529,7 +535,7 @@ function Management() {
                 />
               </div>
               <button type="submit" className="btn-primary">
-                {editingIncome ? 'Update Income Source' : 'Create Income Source'}
+                Create Income Source
               </button>
             </form>
           </div>
@@ -591,7 +597,7 @@ function Management() {
           </button>
         </div>
 
-        {showExpenseTemplateForm && (
+        {showExpenseTemplateForm && !editingExpenseTemplate && (
           <div className="form-card">
             <form onSubmit={handleExpenseTemplateSubmit} className="management-form">
               <div className="form-group">
@@ -671,7 +677,7 @@ function Management() {
                 </select>
               </div>
               <button type="submit" className="btn-primary">
-                {editingExpenseTemplate ? 'Update Recurring Expense' : 'Create Recurring Expense'}
+                Create Recurring Expense
               </button>
             </form>
           </div>
@@ -918,6 +924,159 @@ function Management() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Income Modal */}
+      {showIncomeModal && (
+        <div className="modal-overlay" onClick={handleCancelIncomeEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Income Source</h3>
+              <button className="modal-close" onClick={handleCancelIncomeEdit}>
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleIncomeSubmit} style={{ padding: '2rem 2.5rem' }}>
+              <div className="form-group">
+                <label htmlFor="modal-income-source-name">Income Source Name</label>
+                <input
+                  type="text"
+                  id="modal-income-source-name"
+                  value={incomeFormData.source_name}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, source_name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., Your Salary, Wife's Salary, Freelance"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-income-amount">Current Monthly Amount</label>
+                <input
+                  type="number"
+                  id="modal-income-amount"
+                  step="0.01"
+                  min="0"
+                  value={incomeFormData.current_amount}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, current_amount: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., 50000"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCancelIncomeEdit}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Income Source
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Expense Template Modal */}
+      {showExpenseTemplateModal && (
+        <div className="modal-overlay" onClick={handleCancelExpenseTemplateEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Recurring Expense</h3>
+              <button className="modal-close" onClick={handleCancelExpenseTemplateEdit}>
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleExpenseTemplateSubmit} style={{ padding: '2rem 2.5rem' }}>
+              <div className="form-group">
+                <label htmlFor="modal-expense-template-name">Expense Name</label>
+                <input
+                  type="text"
+                  id="modal-expense-template-name"
+                  value={expenseTemplateFormData.name}
+                  onChange={(e) => setExpenseTemplateFormData({ ...expenseTemplateFormData, name: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., Rent, Internet, Gym Membership"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-expense-template-amount">Amount</label>
+                <input
+                  type="number"
+                  id="modal-expense-template-amount"
+                  step="0.01"
+                  min="0"
+                  value={expenseTemplateFormData.amount}
+                  onChange={(e) => setExpenseTemplateFormData({ ...expenseTemplateFormData, amount: e.target.value })}
+                  required
+                  className="form-input"
+                  placeholder="e.g., 15000"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-expense-template-category">Category</label>
+                <select
+                  id="modal-expense-template-category"
+                  value={expenseTemplateFormData.category_id}
+                  onChange={(e) => {
+                    setExpenseTemplateFormData({
+                      ...expenseTemplateFormData,
+                      category_id: e.target.value,
+                      subcategory_id: ''
+                    })
+                  }}
+                  required
+                  className="form-input"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              {expenseTemplateFormData.category_id && (
+                <div className="form-group">
+                  <label htmlFor="modal-expense-template-subcategory">Subcategory (Optional)</label>
+                  <select
+                    id="modal-expense-template-subcategory"
+                    value={expenseTemplateFormData.subcategory_id}
+                    onChange={(e) => setExpenseTemplateFormData({ ...expenseTemplateFormData, subcategory_id: e.target.value })}
+                    className="form-input"
+                  >
+                    <option value="">None</option>
+                    {getSubcategoriesForCategory(expenseTemplateFormData.category_id).map((subcat) => (
+                      <option key={subcat.id} value={subcat.id}>{subcat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="form-group">
+                <label htmlFor="modal-expense-template-account">Payment Account (Optional)</label>
+                <select
+                  id="modal-expense-template-account"
+                  value={expenseTemplateFormData.account_id}
+                  onChange={(e) => setExpenseTemplateFormData({ ...expenseTemplateFormData, account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">None</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCancelExpenseTemplateEdit}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Recurring Expense
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
