@@ -54,6 +54,11 @@ function MonthlyExpenses() {
     amount: '',
     description: ''
   })
+  const [expenseFilters, setExpenseFilters] = useState({
+    category_id: '',
+    account_id: '',
+    search: ''
+  })
 
   const isCurrentMonth = selectedYear === currentDate.getFullYear() &&
                          selectedMonth === (currentDate.getMonth() + 1)
@@ -341,6 +346,37 @@ function MonthlyExpenses() {
       console.error('Error generating expenses:', error)
       alert('Failed to generate expenses: ' + (error.message || 'Unknown error'))
     }
+  }
+
+  // Filter expenses based on selected filters
+  const filteredExpenses = expenses.filter(expense => {
+    // Category filter
+    if (expenseFilters.category_id && expense.category_id !== parseInt(expenseFilters.category_id)) {
+      return false
+    }
+    // Account filter
+    if (expenseFilters.account_id && expense.account_id !== parseInt(expenseFilters.account_id)) {
+      return false
+    }
+    // Search filter (searches in category name, subcategory name, and account name)
+    if (expenseFilters.search) {
+      const searchLower = expenseFilters.search.toLowerCase()
+      const categoryMatch = (expense.category_name || '').toLowerCase().includes(searchLower)
+      const subcategoryMatch = (expense.subcategory_name || '').toLowerCase().includes(searchLower)
+      const accountMatch = (expense.account_name || '').toLowerCase().includes(searchLower)
+      if (!categoryMatch && !subcategoryMatch && !accountMatch) {
+        return false
+      }
+    }
+    return true
+  })
+
+  const handleResetFilters = () => {
+    setExpenseFilters({
+      category_id: '',
+      account_id: '',
+      search: ''
+    })
   }
 
   if (loading && expenses.length === 0) {
@@ -700,8 +736,69 @@ function MonthlyExpenses() {
           </div>
         )}
 
+        {/* Filters Section */}
+        {expenses.length > 0 && (
+          <div className="filters-section">
+            <div className="filters-row">
+              <div className="filter-group">
+                <label htmlFor="filter-category">Filter by Category</label>
+                <select
+                  id="filter-category"
+                  value={expenseFilters.category_id}
+                  onChange={(e) => setExpenseFilters({ ...expenseFilters, category_id: e.target.value })}
+                  className="filter-select"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="filter-account">Filter by Account</label>
+                <select
+                  id="filter-account"
+                  value={expenseFilters.account_id}
+                  onChange={(e) => setExpenseFilters({ ...expenseFilters, account_id: e.target.value })}
+                  className="filter-select"
+                >
+                  <option value="">All Accounts</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="filter-search">Search</label>
+                <input
+                  type="text"
+                  id="filter-search"
+                  value={expenseFilters.search}
+                  onChange={(e) => setExpenseFilters({ ...expenseFilters, search: e.target.value })}
+                  placeholder="Search category, subcategory, or account..."
+                  className="filter-input"
+                />
+              </div>
+
+              <div className="filter-group filter-actions">
+                <label>&nbsp;</label>
+                <button onClick={handleResetFilters} className="btn-reset-filters">
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+            <div className="filter-results">
+              Showing {filteredExpenses.length} of {expenses.length} expenses
+            </div>
+          </div>
+        )}
+
         {expenses.length === 0 ? (
           <p className="empty-state">No expenses for this month</p>
+        ) : filteredExpenses.length === 0 ? (
+          <p className="empty-state">No expenses match your filters</p>
         ) : (
           <div className="expenses-table">
             <div className="table-header">
@@ -712,7 +809,7 @@ function MonthlyExpenses() {
               <div className="col-account">Payment Account</div>
               {isCurrentMonth && <div className="col-actions">Actions</div>}
             </div>
-            {expenses.map((expense) => (
+            {filteredExpenses.map((expense) => (
               <div key={expense.id} className="table-row">
                 <div className="col-date">{expense.date}</div>
                 <div className="col-category">{expense.category_name || expense.category || '-'}</div>

@@ -71,6 +71,13 @@ function Management() {
   })
   const [editingExpenseTemplate, setEditingExpenseTemplate] = useState(null)
 
+  // Filter state for recurring expenses
+  const [expenseTemplateFilters, setExpenseTemplateFilters] = useState({
+    category_id: '',
+    account_id: '',
+    search: ''
+  })
+
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
@@ -275,6 +282,38 @@ function Management() {
       category_id: '',
       subcategory_id: '',
       account_id: ''
+    })
+  }
+
+  // Filter recurring expenses based on selected filters
+  const filteredExpenseTemplates = expenseTemplates.filter(template => {
+    // Category filter
+    if (expenseTemplateFilters.category_id && template.category_id !== parseInt(expenseTemplateFilters.category_id)) {
+      return false
+    }
+    // Account filter
+    if (expenseTemplateFilters.account_id && template.account_id !== parseInt(expenseTemplateFilters.account_id)) {
+      return false
+    }
+    // Search filter (searches in name, category name, subcategory name, and account name)
+    if (expenseTemplateFilters.search) {
+      const searchLower = expenseTemplateFilters.search.toLowerCase()
+      const nameMatch = (template.name || '').toLowerCase().includes(searchLower)
+      const categoryMatch = (template.category_name || '').toLowerCase().includes(searchLower)
+      const subcategoryMatch = (template.subcategory_name || '').toLowerCase().includes(searchLower)
+      const accountMatch = (template.account_name || '').toLowerCase().includes(searchLower)
+      if (!nameMatch && !categoryMatch && !subcategoryMatch && !accountMatch) {
+        return false
+      }
+    }
+    return true
+  })
+
+  const handleResetExpenseTemplateFilters = () => {
+    setExpenseTemplateFilters({
+      category_id: '',
+      account_id: '',
+      search: ''
     })
   }
 
@@ -683,11 +722,72 @@ function Management() {
           </div>
         )}
 
+        {/* Filters Section */}
+        {expenseTemplates.length > 0 && (
+          <div className="filters-section">
+            <div className="filters-row">
+              <div className="filter-group">
+                <label htmlFor="filter-expense-category">Filter by Category</label>
+                <select
+                  id="filter-expense-category"
+                  value={expenseTemplateFilters.category_id}
+                  onChange={(e) => setExpenseTemplateFilters({ ...expenseTemplateFilters, category_id: e.target.value })}
+                  className="filter-select"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="filter-expense-account">Filter by Account</label>
+                <select
+                  id="filter-expense-account"
+                  value={expenseTemplateFilters.account_id}
+                  onChange={(e) => setExpenseTemplateFilters({ ...expenseTemplateFilters, account_id: e.target.value })}
+                  className="filter-select"
+                >
+                  <option value="">All Accounts</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="filter-expense-search">Search</label>
+                <input
+                  type="text"
+                  id="filter-expense-search"
+                  value={expenseTemplateFilters.search}
+                  onChange={(e) => setExpenseTemplateFilters({ ...expenseTemplateFilters, search: e.target.value })}
+                  placeholder="Search name, category, or account..."
+                  className="filter-input"
+                />
+              </div>
+
+              <div className="filter-group filter-actions">
+                <label>&nbsp;</label>
+                <button onClick={handleResetExpenseTemplateFilters} className="btn-reset-filters">
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+            <div className="filter-results">
+              Showing {filteredExpenseTemplates.length} of {expenseTemplates.length} recurring expenses
+            </div>
+          </div>
+        )}
+
         <div className="items-grid">
           {expenseTemplates.length === 0 ? (
             <p className="empty-state">No recurring expenses yet. Create one to get started!</p>
+          ) : filteredExpenseTemplates.length === 0 ? (
+            <p className="empty-state">No recurring expenses match your filters</p>
           ) : (
-            expenseTemplates.map((template) => (
+            filteredExpenseTemplates.map((template) => (
               <div key={template.id} className="item-card">
                 <div className="item-header">
                   <h4>{template.name}</h4>
