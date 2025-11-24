@@ -163,15 +163,15 @@ function MonthlyExpenses() {
 
     try {
       const expenseData = {
-        date: formData.date || getDefaultDate(),
         category_id: parseInt(formData.category_id),
         subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
         amount: parseFloat(formData.amount),
         account_id: parseInt(formData.account_id)
       }
 
-      // Only include status for create operations, not updates
+      // Only include date and status for create operations, not updates
       if (!editingExpense) {
+        expenseData.date = formData.date || getDefaultDate()
         expenseData.status = formData.status
       }
 
