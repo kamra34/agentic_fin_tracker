@@ -153,7 +153,7 @@ export async function getExpense(id) {
 }
 
 export async function createExpense(data) {
-  const response = await timedFetch(`${API_BASE_URL}/api/expenses`, {
+  const response = await timedFetch(`${API_BASE_URL}/api/expenses/`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
