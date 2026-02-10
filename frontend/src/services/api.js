@@ -136,6 +136,13 @@ export async function getExpenseAnalytics() {
   return handleResponse(response)
 }
 
+export async function getExpenseAnalyticsDetail() {
+  const response = await timedFetch(`${API_BASE_URL}/api/dashboard/expense-analytics-detail`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
 // Expenses API
 export async function getExpenses(skip = 0, limit = 100, filters = {}) {
   const params = new URLSearchParams({ skip, limit, ...filters })

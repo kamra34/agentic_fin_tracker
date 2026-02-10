@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import './ExpenseKPICard.css'
 
@@ -35,6 +36,7 @@ const getTrendMax = (analyticsData, trendKey) => {
 
 function ExpenseKPICard({ analytics }) {
   const { formatAmount } = useCurrency()
+  const navigate = useNavigate()
   const [selectedWindow, setSelectedWindow] = useState('three_months')
   const [trendView, setTrendView] = useState('monthly') // 'monthly' or 'yearly'
   const [hoveredBar, setHoveredBar] = useState(null)
@@ -114,16 +116,24 @@ function ExpenseKPICard({ analytics }) {
 
       {/* Time Window Selector */}
       <div className="kpi-time-selector">
-        {timeWindows.map((window, index) => (
-          <button
-            key={`${window.key}-${index}`}
-            className={`time-btn ${selectedWindow === window.key ? 'active' : ''}`}
-            onClick={() => setSelectedWindow(window.key)}
-            title={window.fullLabel}
-          >
-            {window.label}
-          </button>
-        ))}
+        <div className="kpi-time-buttons">
+          {timeWindows.map((window, index) => (
+            <button
+              key={`${window.key}-${index}`}
+              className={`time-btn ${selectedWindow === window.key ? 'active' : ''}`}
+              onClick={() => setSelectedWindow(window.key)}
+              title={window.fullLabel}
+            >
+              {window.label}
+            </button>
+          ))}
+        </div>
+        <button
+          className="analysis-detail-btn"
+          onClick={() => navigate('/expense-analysis')}
+        >
+          View Detailed Analysis
+        </button>
       </div>
 
       {/* Main KPI Header */}

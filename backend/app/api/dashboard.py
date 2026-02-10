@@ -50,3 +50,13 @@ async def get_expense_analytics(
     """Get comprehensive expense analytics across multiple time windows"""
     service = AnalyticsService(db)
     return service.get_expense_analytics(current_user.id)
+
+
+@router.get("/expense-analytics-detail")
+async def get_expense_analytics_detail(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get detailed expense analytics for the deep-dive page"""
+    service = AnalyticsService(db)
+    return service.get_expense_analysis_detail(current_user.id)

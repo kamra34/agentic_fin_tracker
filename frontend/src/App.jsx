@@ -3,6 +3,7 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import ExpenseAnalysis from './pages/ExpenseAnalysis'
 import Profile from './pages/Profile'
 import MonthlyExpenses from './pages/MonthlyExpenses'
 import ControlCenter from './pages/ControlCenter'
@@ -44,6 +45,22 @@ function App() {
                   <Navigation />
                   <main className="main-content">
                     <Dashboard />
+                  </main>
+                  <FloatingChat />
+                </div>
+              </CurrencyProvider>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/expense-analysis"
+          element={
+            <ProtectedRoute>
+              <CurrencyProvider>
+                <div className="app">
+                  <Navigation />
+                  <main className="main-content">
+                    <ExpenseAnalysis />
                   </main>
                   <FloatingChat />
                 </div>
