@@ -87,11 +87,11 @@ agentic_fin_tracker/
 
 4. Run the FastAPI server:
    ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn main:app --reload --host 0.0.0.0 --port 8001
    ```
 
-   The API will be available at `http://localhost:8000`
-   API documentation at `http://localhost:8000/docs`
+   The API will be available at `http://localhost:8001`
+   API documentation at `http://localhost:8001/docs`
 
 ### Frontend Setup
 
@@ -114,7 +114,7 @@ agentic_fin_tracker/
    npm run dev
    ```
 
-   The application will be available at `http://localhost:5173`
+   The application will be available at `http://localhost:5174`
 
 ## Features
 

@@ -34,6 +34,7 @@ class AnalyticsService:
 
     def _get_period_analytics(self, user_id: int, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
         """Get analytics for a specific time period"""
+        window_start = start_date.replace(day=1)
 
         # Total expenses and count
         total_query = self.db.query(
@@ -42,7 +43,7 @@ class AnalyticsService:
         ).filter(
             and_(
                 Expense.user_id == user_id,
-                Expense.date >= start_date.date(),
+                Expense.date >= window_start.date(),
                 Expense.date <= end_date.date(),
                 Expense.status == True
             )
@@ -52,7 +53,7 @@ class AnalyticsService:
         expense_count = total_query.count or 0
 
         # Average monthly spending
-        months_diff = max(1, (end_date.year - start_date.year) * 12 + end_date.month - start_date.month)
+        months_diff = max(1, (end_date.year - window_start.year) * 12 + end_date.month - window_start.month)
         avg_monthly = total_amount / months_diff if months_diff > 0 else 0
 
         # Top categories
@@ -65,7 +66,7 @@ class AnalyticsService:
         ).filter(
             and_(
                 Expense.user_id == user_id,
-                Expense.date >= start_date.date(),
+                Expense.date >= window_start.date(),
                 Expense.date <= end_date.date(),
                 Expense.status == True
             )
@@ -83,7 +84,7 @@ class AnalyticsService:
         ).filter(
             and_(
                 Expense.user_id == user_id,
-                Expense.date >= start_date.date(),
+                Expense.date >= window_start.date(),
                 Expense.date <= end_date.date(),
                 Expense.status == True
             )
@@ -102,7 +103,7 @@ class AnalyticsService:
         ).filter(
             and_(
                 Expense.user_id == user_id,
-                Expense.date >= start_date.date(),
+                Expense.date >= window_start.date(),
                 Expense.date <= end_date.date(),
                 Expense.status == True
             )
@@ -124,7 +125,7 @@ class AnalyticsService:
                 and_(
                     Expense.user_id == user_id,
                     extract('year', Expense.date) == year,
-                    Expense.date >= start_date.date(),
+                    Expense.date >= window_start.date(),
                     Expense.date <= end_date.date(),
                     Expense.status == True
                 )
@@ -140,7 +141,7 @@ class AnalyticsService:
                 and_(
                     Expense.user_id == user_id,
                     extract('year', Expense.date) == year,
-                    Expense.date >= start_date.date(),
+                    Expense.date >= window_start.date(),
                     Expense.date <= end_date.date(),
                     Expense.status == True
                 )
@@ -236,6 +237,89 @@ class AnalyticsService:
             func.sum(Expense.amount).desc()
         ).limit(10).all()
 
+        # Monthly trend (all time)
+        monthly_trend = self.db.query(
+            extract('year', Expense.date).label('year'),
+            extract('month', Expense.date).label('month'),
+            func.sum(Expense.amount).label('total')
+        ).filter(
+            and_(
+                Expense.user_id == user_id,
+                Expense.status == True
+            )
+        ).group_by(
+            extract('year', Expense.date),
+            extract('month', Expense.date)
+        ).order_by(
+            extract('year', Expense.date),
+            extract('month', Expense.date)
+        ).all()
+
+        # Yearly trend (all time)
+        yearly_trend = self.db.query(
+            extract('year', Expense.date).label('year'),
+            func.sum(Expense.amount).label('total')
+        ).filter(
+            and_(
+                Expense.user_id == user_id,
+                Expense.status == True
+            )
+        ).group_by(
+            extract('year', Expense.date)
+        ).order_by(
+            extract('year', Expense.date)
+        ).all()
+
+        yearly_trend_data = []
+        for year_data in yearly_trend:
+            year = int(year_data.year)
+
+            months_count = self.db.query(
+                func.count(func.distinct(extract('month', Expense.date)))
+            ).filter(
+                and_(
+                    Expense.user_id == user_id,
+                    extract('year', Expense.date) == year,
+                    Expense.status == True
+                )
+            ).scalar()
+
+            top_cats = self.db.query(
+                Category.name,
+                func.sum(Expense.amount).label('total')
+            ).join(
+                Expense, Expense.category_id == Category.id
+            ).filter(
+                and_(
+                    Expense.user_id == user_id,
+                    extract('year', Expense.date) == year,
+                    Expense.status == True
+                )
+            ).group_by(
+                Category.id, Category.name
+            ).order_by(
+                func.sum(Expense.amount).desc()
+            ).limit(3).all()
+
+            yearly_total = float(year_data.total)
+            yearly_trend_data.append({
+                "year": year,
+                "total": yearly_total,
+                "months_count": months_count or 0,
+                "top_categories": [
+                    {
+                        "name": cat.name,
+                        "total": float(cat.total),
+                        "percentage": (float(cat.total) / yearly_total * 100) if yearly_total > 0 else 0
+                    }
+                    for cat in top_cats
+                ]
+            })
+
+        trend_data = [{"year": int(t.year), "month": int(t.month), "total": float(t.total)} for t in monthly_trend]
+        growth_rate = self._calculate_growth_rate(trend_data)
+        yearly_growth_rate = self._calculate_yearly_growth_rate(yearly_trend_data)
+
         return {
             "total_amount": total_amount,
             "expense_count": expense_count,
@@ -243,6 +327,10 @@ class AnalyticsService:
             "months_of_data": months_of_data,
             "first_expense_date": first_expense.isoformat() if first_expense else None,
             "last_expense_date": last_expense.isoformat() if last_expense else None,
+            "monthly_trend": trend_data,
+            "yearly_trend": yearly_trend_data,
+            "growth_rate": growth_rate,
+            "yearly_growth_rate": yearly_growth_rate,
             "top_categories": [
                 {
                     "name": cat.name,

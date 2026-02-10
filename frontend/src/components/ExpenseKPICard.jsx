@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCurrency } from '../context/CurrencyContext'
 import './ExpenseKPICard.css'
 
@@ -15,6 +15,24 @@ const YEARLY_TIME_WINDOWS = [
   { key: 'all_time', label: 'All', fullLabel: 'All Time' }
 ]
 
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const getTrendMax = (analyticsData, trendKey) => {
+  if (!analyticsData) return 0
+
+  return Object.values(analyticsData).reduce((maxValue, windowData) => {
+    if (!windowData || !Array.isArray(windowData[trendKey])) return maxValue
+
+    for (const item of windowData[trendKey]) {
+      if (typeof item?.total === 'number' && item.total > maxValue) {
+        maxValue = item.total
+      }
+    }
+
+    return maxValue
+  }, 0)
+}
+
 function ExpenseKPICard({ analytics }) {
   const { formatAmount } = useCurrency()
   const [selectedWindow, setSelectedWindow] = useState('three_months')
@@ -23,6 +41,8 @@ function ExpenseKPICard({ analytics }) {
 
   // Get current time windows based on trend view
   const timeWindows = trendView === 'monthly' ? MONTHLY_TIME_WINDOWS : YEARLY_TIME_WINDOWS
+  const monthlyTrendMax = useMemo(() => getTrendMax(analytics, 'monthly_trend'), [analytics])
+  const yearlyTrendMax = useMemo(() => getTrendMax(analytics, 'yearly_trend'), [analytics])
 
   // When switching trend view, adjust selected window if needed
   useEffect(() => {
@@ -55,6 +75,13 @@ function ExpenseKPICard({ analytics }) {
     const first = new Date(allTimeData.first_expense_date)
     const last = new Date(allTimeData.last_expense_date)
     return `${first.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${last.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+  }
+
+  const formatMonthLabel = (item) => {
+    const monthIndex = typeof item?.month === 'number' ? item.month - 1 : -1
+    const month = MONTH_LABELS[monthIndex] || item?.month
+    const year = typeof item?.year === 'number' ? String(item.year).slice(-2) : ''
+    return year ? `${month} '${year}` : `${month}`
   }
 
   return (
@@ -152,9 +179,9 @@ function ExpenseKPICard({ analytics }) {
           </div>
           <div className="chart-bars">
             {trendData.map((item, index) => {
-              const maxAmount = Math.max(...trendData.map(t => t.total))
+              const maxAmount = trendView === 'monthly' ? monthlyTrendMax : yearlyTrendMax
               const heightPercent = maxAmount > 0 ? (item.total / maxAmount) * 100 : 0
-              const label = trendView === 'monthly' ? `${item.month}` : `${item.year}`
+              const label = trendView === 'monthly' ? formatMonthLabel(item) : `${item.year}`
 
               return (
                 <div
