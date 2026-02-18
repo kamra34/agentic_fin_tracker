@@ -23,8 +23,10 @@ const MONTH_NAMES = [
 function MonthlyExpenses() {
   const { formatAmount } = useCurrency()
   const currentDate = new Date()
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
+  const currentYear = currentDate.getFullYear()
+  const currentMonth = currentDate.getMonth() + 1
+  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [expenses, setExpenses] = useState([])
   const [summary, setSummary] = useState({ total: 0, count: 0, by_category: {} })
   const [availableMonths, setAvailableMonths] = useState([])
@@ -61,8 +63,27 @@ function MonthlyExpenses() {
     search: ''
   })
 
-  const isCurrentMonth = selectedYear === currentDate.getFullYear() &&
-                         selectedMonth === (currentDate.getMonth() + 1)
+  const isCurrentMonth = selectedYear === currentYear && selectedMonth === currentMonth
+
+  const getMonthOptionsForYear = (year) => {
+    const months = availableMonths
+      .filter(m => m.year === year)
+      .map(m => m.month)
+
+    // Always keep current and selected month visible in dropdowns, even without expense rows.
+    if (year === currentYear) {
+      months.push(currentMonth)
+    }
+    if (year === selectedYear) {
+      months.push(selectedMonth)
+    }
+
+    return [...new Set(months)].sort((a, b) => b - a)
+  }
+
+  const yearOptions = [...new Set([...availableMonths.map(m => m.year), currentYear, selectedYear])]
+    .sort((a, b) => b - a)
+  const monthOptions = getMonthOptionsForYear(selectedYear)
 
   useEffect(() => {
     loadInitialData()
@@ -427,14 +448,15 @@ function MonthlyExpenses() {
               value={selectedYear}
               onChange={(e) => {
                 const year = parseInt(e.target.value)
-                // Find first available month for this year
-                const monthsInYear = availableMonths.filter(m => m.year === year)
-                const month = monthsInYear.length > 0 ? monthsInYear[0].month : selectedMonth
+                const monthsInYear = getMonthOptionsForYear(year)
+                const month = monthsInYear.length > 0
+                  ? monthsInYear[0]
+                  : (year === currentYear ? currentMonth : 1)
                 handleMonthChange(year, month)
               }}
               className="year-select"
             >
-              {[...new Set(availableMonths.map(m => m.year))].map(year => (
+              {yearOptions.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
@@ -450,13 +472,11 @@ function MonthlyExpenses() {
               onChange={(e) => handleMonthChange(selectedYear, parseInt(e.target.value))}
               className="month-select"
             >
-              {availableMonths
-                .filter(m => m.year === selectedYear)
-                .map(m => (
-                  <option key={m.month} value={m.month}>
-                    {MONTH_NAMES[m.month - 1]}
-                  </option>
-                ))}
+              {monthOptions.map(month => (
+                <option key={month} value={month}>
+                  {MONTH_NAMES[month - 1]}
+                </option>
+              ))}
             </select>
           </div>
         </div>
