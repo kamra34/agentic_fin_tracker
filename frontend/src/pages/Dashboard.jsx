@@ -68,17 +68,14 @@ function Dashboard() {
     return savingsSummary?.total_value || 0
   }
 
+  // Current value of accounts flagged as investments (honors the per-account toggle)
   const getTotalInvestments = () => {
-    if (!savingsSummary || !savingsSummary.accounts_by_type) return 0
-    const investment = savingsSummary.accounts_by_type['investment']
-    const crypto = savingsSummary.accounts_by_type['crypto']
-    return (investment?.value || 0) + (crypto?.value || 0)
+    return savingsSummary?.investment_value || 0
   }
 
+  // Cash held in non-investment (buffer) accounts
   const getTotalSavingsOnly = () => {
-    if (!savingsSummary || !savingsSummary.accounts_by_type) return 0
-    const bankSavings = savingsSummary.accounts_by_type['bank_savings']
-    return bankSavings?.value || 0
+    return savingsSummary?.total_buffer || 0
   }
 
   return (

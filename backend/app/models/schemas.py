@@ -328,7 +328,9 @@ class SavingsAccountBase(BaseModel):
 
 
 class SavingsAccountCreate(SavingsAccountBase):
-    pass
+    # 1 = investment (counts toward invested/profit-loss), 0 = cash buffer.
+    # If omitted, the service derives a default from account_type.
+    is_investment: Optional[int] = None
 
 
 class SavingsAccountUpdate(BaseModel):
@@ -336,12 +338,14 @@ class SavingsAccountUpdate(BaseModel):
     account_type: Optional[str] = Field(None, min_length=1, max_length=50)
     description: Optional[str] = Field(None, max_length=255)
     is_active: Optional[int] = None
+    is_investment: Optional[int] = None
 
 
 class SavingsAccountResponse(SavingsAccountBase):
     id: int
     user_id: int
     is_active: int
+    is_investment: int
     created_at: datetime
     updated_at: datetime
 

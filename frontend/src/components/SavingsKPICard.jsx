@@ -32,7 +32,9 @@ function SavingsKPICard({ savingsSummary }) {
     total_profit_loss,
     profit_loss_percentage,
     account_count,
-    accounts_by_type
+    accounts_by_type,
+    total_buffer = 0,
+    investment_value = 0
   } = savingsSummary
 
   const isProfit = total_profit_loss >= 0
@@ -116,15 +118,15 @@ function SavingsKPICard({ savingsSummary }) {
         </div>
       )}
 
-      {/* Performance Summary */}
+      {/* Performance Summary (investment accounts only) */}
       <div className="kpi-performance">
         <div className="performance-metric">
           <span className="performance-label">Invested Capital</span>
           <span className="performance-value">{formatAmount(total_invested)}</span>
         </div>
         <div className="performance-metric">
-          <span className="performance-label">Current Value</span>
-          <span className="performance-value">{formatAmount(total_value)}</span>
+          <span className="performance-label">Investment Value</span>
+          <span className="performance-value">{formatAmount(investment_value)}</span>
         </div>
         <div className="performance-metric">
           <span className="performance-label">Total Return</span>
@@ -132,6 +134,12 @@ function SavingsKPICard({ savingsSummary }) {
             {isProfit ? '+' : ''}{formatAmount(total_profit_loss)} ({isProfit ? '+' : ''}{profit_loss_percentage}%)
           </span>
         </div>
+        {total_buffer > 0 && (
+          <div className="performance-metric">
+            <span className="performance-label">Cash Buffer</span>
+            <span className="performance-value">{formatAmount(total_buffer)}</span>
+          </div>
+        )}
       </div>
     </div>
   )

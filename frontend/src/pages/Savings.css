@@ -157,6 +157,50 @@
   opacity: 0.8;
 }
 
+/* Savings buffer (cash) summary card */
+.summary-card-buffer .summary-value {
+  color: var(--text-primary);
+}
+
+.summary-sublabel {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  opacity: 0.85;
+}
+
+/* "Count as an investment" checkbox in the account form */
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  margin-bottom: 0 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* "Buffer" badge next to an account's type */
+.account-badge-buffer {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--success-color);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
 /* ============================================
    ACCOUNTS GRID
    ============================================ */

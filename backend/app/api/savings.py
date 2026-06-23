@@ -48,6 +48,7 @@ def get_savings_account(
         "account_type": account.account_type,
         "description": account.description,
         "is_active": account.is_active,
+        "is_investment": account.is_investment,
         "created_at": account.created_at,
         "updated_at": account.updated_at,
         **stats,

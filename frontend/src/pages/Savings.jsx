@@ -19,6 +19,10 @@ const ACCOUNT_TYPES = [
   { value: 'other', label: '💼 Other', icon: '💼' }
 ]
 
+// Account types that default to "investment" (counted toward Invested & Profit/Loss).
+// Everything else defaults to a cash buffer. The user can override per account.
+const INVESTMENT_TYPES = ['investment', 'crypto', 'retirement']
+
 const TRANSACTION_TYPES = [
   { value: 'deposit', label: 'Deposit', color: '#00c853' },
   { value: 'withdrawal', label: 'Withdrawal', color: '#ef4444' },
@@ -41,7 +45,8 @@ function Savings() {
   const [accountForm, setAccountForm] = useState({
     name: '',
     account_type: '',
-    description: ''
+    description: '',
+    is_investment: 1
   })
 
   const [transactionForm, setTransactionForm] = useState({
@@ -75,14 +80,16 @@ function Savings() {
       setAccountForm({
         name: account.name,
         account_type: account.account_type,
-        description: account.description || ''
+        description: account.description || '',
+        is_investment: account.is_investment ?? 1
       })
     } else {
       setEditingAccount(null)
       setAccountForm({
         name: '',
         account_type: '',
-        description: ''
+        description: '',
+        is_investment: 1
       })
     }
     setError('')
@@ -92,7 +99,7 @@ function Savings() {
   const handleCloseAccountModal = () => {
     setShowAccountModal(false)
     setEditingAccount(null)
-    setAccountForm({ name: '', account_type: '', description: '' })
+    setAccountForm({ name: '', account_type: '', description: '', is_investment: 1 })
     setError('')
   }
 
@@ -206,16 +213,30 @@ function Savings() {
     return accountType?.icon || '💼'
   }
 
+  // Total Portfolio Value = everything you hold (investments + cash buffers)
   const getTotalPortfolioValue = () => {
     return accounts.reduce((sum, acc) => sum + (acc.current_value || 0), 0)
   }
 
+  // Profit/Loss and Invested only count real investment accounts, so a cash
+  // buffer no longer dilutes your investment return.
   const getTotalProfitLoss = () => {
-    return accounts.reduce((sum, acc) => sum + (acc.profit_loss || 0), 0)
+    return accounts
+      .filter(acc => acc.is_investment)
+      .reduce((sum, acc) => sum + (acc.profit_loss || 0), 0)
   }
 
   const getTotalInvested = () => {
-    return accounts.reduce((sum, acc) => sum + (acc.total_deposits || 0) - (acc.total_withdrawals || 0), 0)
+    return accounts
+      .filter(acc => acc.is_investment)
+      .reduce((sum, acc) => sum + (acc.total_deposits || 0) - (acc.total_withdrawals || 0), 0)
+  }
+
+  // Cash sitting in non-investment (buffer) accounts
+  const getTotalBuffer = () => {
+    return accounts
+      .filter(acc => !acc.is_investment)
+      .reduce((sum, acc) => sum + (acc.current_value || 0), 0)
   }
 
   if (loading) {
@@ -255,6 +276,13 @@ function Savings() {
                 )}
               </div>
             </div>
+            {getTotalBuffer() > 0 && (
+              <div className="summary-card summary-card-buffer">
+                <div className="summary-label">Savings Buffer</div>
+                <div className="summary-value">{formatAmount(getTotalBuffer())}</div>
+                <div className="summary-sublabel">Cash — not counted as investment</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -300,6 +328,11 @@ function Savings() {
                     <h3 className="account-name">{account.name}</h3>
                     <p className="account-type">
                       {ACCOUNT_TYPES.find(t => t.value === account.account_type)?.label || account.account_type}
+                      {!account.is_investment && (
+                        <span className="account-badge-buffer" title="Not counted toward Total Invested or Profit/Loss">
+                          Buffer
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -477,7 +510,15 @@ function Savings() {
                 <select
                   id="account_type"
                   value={accountForm.account_type}
-                  onChange={(e) => setAccountForm({ ...accountForm, account_type: e.target.value })}
+                  onChange={(e) => {
+                    const newType = e.target.value
+                    setAccountForm({
+                      ...accountForm,
+                      account_type: newType,
+                      // Apply the smart default for the chosen type (user can still toggle below)
+                      is_investment: INVESTMENT_TYPES.includes(newType) ? 1 : 0
+                    })
+                  }}
                   required
                   className="form-select"
                 >
@@ -488,6 +529,22 @@ function Savings() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={accountForm.is_investment === 1}
+                    onChange={(e) => setAccountForm({ ...accountForm, is_investment: e.target.checked ? 1 : 0 })}
+                  />
+                  <span>Count as an investment</span>
+                </label>
+                <p className="field-hint">
+                  When on, this account's deposits and gains count toward <strong>Total Invested</strong> and{' '}
+                  <strong>Total Profit/Loss</strong>. Turn it off for a cash savings buffer — its balance
+                  still counts toward Total Portfolio Value, but won't affect your investment return.
+                </p>
               </div>
 
               <div className="form-group">

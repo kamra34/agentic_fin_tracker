@@ -31,12 +31,22 @@ class SavingsService:
             SavingsAccount.user_id == user_id
         ).first()
 
+    # Account types that are treated as investments by default (used only when the
+    # client doesn't explicitly set is_investment). Everything else defaults to a buffer.
+    _DEFAULT_INVESTMENT_TYPES = {"investment", "crypto", "retirement"}
+
     @staticmethod
     def create_account(db: Session, account: SavingsAccountCreate, user_id: int) -> SavingsAccount:
         """Create a new savings account"""
+        data = account.dict()
+        # Derive a sensible default from the account type when not explicitly provided
+        if data.get("is_investment") is None:
+            data["is_investment"] = (
+                1 if data.get("account_type") in SavingsService._DEFAULT_INVESTMENT_TYPES else 0
+            )
         db_account = SavingsAccount(
             user_id=user_id,
-            **account.dict()
+            **data
         )
         db.add(db_account)
         db.commit()
@@ -274,6 +284,7 @@ class SavingsService:
                 "account_type": account.account_type,
                 "description": account.description,
                 "is_active": account.is_active,
+                "is_investment": account.is_investment,
                 "created_at": account.created_at,
                 "updated_at": account.updated_at,
                 **stats,
@@ -302,19 +313,32 @@ class SavingsService:
                 "total_invested": 0,
                 "total_profit_loss": 0,
                 "profit_loss_percentage": 0,
+                "total_buffer": 0,
+                "investment_value": 0,
                 "account_count": 0,
                 "accounts_by_type": {}
             }
 
-        total_value = 0
-        total_invested = 0
+        total_value = 0          # All accounts (investments + buffers) -> grand total
+        total_invested = 0       # Investment accounts only
+        total_profit_loss = 0    # Investment accounts only
+        total_buffer = 0         # Non-investment (cash buffer) accounts' current value
+        investment_value = 0     # Investment accounts' current value
         accounts_by_type = {}
 
         for account in accounts:
             stats = SavingsService.calculate_account_stats(db, account.id, user_id)
 
             total_value += stats["current_value"]
-            total_invested += stats["net_invested"]
+
+            # Only real investment accounts feed Total Invested / Profit-Loss.
+            # Cash buffers still count toward Total Portfolio Value (total_value) above.
+            if account.is_investment:
+                total_invested += stats["net_invested"]
+                total_profit_loss += stats["profit_loss"]
+                investment_value += stats["current_value"]
+            else:
+                total_buffer += stats["current_value"]
 
             # Aggregate by account type
             account_type = account.account_type
@@ -331,8 +355,8 @@ class SavingsService:
             accounts_by_type[account_type]["invested"] += stats["net_invested"]
             accounts_by_type[account_type]["profit_loss"] += stats["profit_loss"]
 
-        # Calculate overall profit/loss
-        total_profit_loss = total_value - total_invested
+        # Overall profit/loss is the sum across investment accounts only (computed above),
+        # and the percentage is measured against invested capital in investments only.
         profit_loss_percentage = (
             (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
         )
@@ -342,6 +366,8 @@ class SavingsService:
             "total_invested": total_invested,
             "total_profit_loss": total_profit_loss,
             "profit_loss_percentage": round(profit_loss_percentage, 2),
+            "total_buffer": total_buffer,
+            "investment_value": investment_value,
             "account_count": len(accounts),
             "accounts_by_type": accounts_by_type
         }

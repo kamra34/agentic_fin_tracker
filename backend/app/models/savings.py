@@ -24,6 +24,9 @@ class SavingsAccount(Base):
     account_type = Column(String(50), nullable=False)  # e.g., "investment", "crypto", "bank_savings"
     description = Column(String(255), nullable=True)  # Optional notes
     is_active = Column(Integer, default=1)  # 1 = active, 0 = inactive
+    # 1 = counts toward Total Invested & Total Profit/Loss (real investment);
+    # 0 = cash buffer (value still counts toward Total Portfolio Value only)
+    is_investment = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

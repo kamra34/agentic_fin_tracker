@@ -297,6 +297,7 @@ class ChatDataService:
             accounts_data.append({
                 "account_name": account.name,
                 "account_type": account.account_type,
+                "is_investment": bool(account.is_investment),
                 "total_deposits": round(float(deposits), 2),
                 "total_withdrawals": round(float(withdrawals), 2),
                 "net_deposits": round(float(net_deposits), 2),
