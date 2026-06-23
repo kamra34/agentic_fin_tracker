@@ -5,7 +5,7 @@ from typing import List, AsyncGenerator
 from pydantic import BaseModel
 import json
 import asyncio
-from app.core.dependencies import get_db, get_current_user
+from app.core.dependencies import get_readonly_db, get_current_user, get_current_user_readonly
 from app.models.user import User
 from app.services.chat_data_service import ChatDataService
 from app.services.conversation_manager import conversation_manager
@@ -35,8 +35,8 @@ class ChatResponse(BaseModel):
 @router.post("/stream")
 async def stream_chat_message(
     request: ChatRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user_readonly),
+    db: Session = Depends(get_readonly_db)
 ):
     """
     Stream chat response with real-time agent updates using Server-Sent Events.
@@ -136,8 +136,8 @@ async def stream_chat_message(
 @router.post("/message", response_model=ChatResponse)
 async def send_chat_message(
     request: ChatRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user_readonly),
+    db: Session = Depends(get_readonly_db)
 ):
     """
     Send a message to the AI financial assistant.

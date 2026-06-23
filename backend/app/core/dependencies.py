@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.core.database import get_db, get_readonly_db
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.models.schemas import TokenData
@@ -33,6 +33,21 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+async def get_current_user_readonly(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_readonly_db)
+) -> User:
+    """Resolve the current user on a read-only AUTOCOMMIT session.
+
+    Identical to get_current_user, but the auth lookup does not open a lingering
+    transaction. Use for endpoints that only read and may run long external calls
+    (e.g. the chat/agents flow): paired with get_readonly_db, FastAPI's dependency
+    cache makes the auth lookup and the endpoint share ONE AUTOCOMMIT session, so
+    nothing sits 'idle in transaction' while the agents call OpenAI.
+    """
+    return await get_current_user(token=token, db=db)
 
 
 async def get_current_active_user(
