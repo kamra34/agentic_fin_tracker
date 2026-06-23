@@ -36,6 +36,7 @@ class UserResponse(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    last_login: Optional[datetime] = None
     timezone: Optional[str] = None
     household_members: Optional[int] = None
     num_vehicles: Optional[int] = None

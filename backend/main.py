@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.core.config import settings
-from app.api import auth, expenses, dashboard, categories, accounts, incomes, savings, chat
-from app.models import user, expense, account, category, income, savings as savings_models  # Import all models for SQLAlchemy
+from app.api import auth, expenses, dashboard, categories, accounts, incomes, savings, chat, admin
+from app.models import user, expense, account, category, income, savings as savings_models, audit  # Import all models for SQLAlchemy
 import json
 import time
 import logging
@@ -53,6 +53,47 @@ async def add_timing_header(request: Request, call_next):
 
     return response
 
+
+# Activity logging: one row per authenticated API request (admin audit / "where they went").
+# user_id is set on request.state by get_current_user during the request; we read it after.
+# Best-effort: any failure here must never break the actual request.
+_ACTIVITY_SKIP_PREFIXES = ("/api/admin", "/api/auth/login", "/api/auth/register")
+
+
+@app.middleware("http")
+async def activity_logging(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        path = request.url.path
+        user_id = getattr(request.state, "user_id", None)
+        if (
+            user_id is not None
+            and request.method != "OPTIONS"
+            and path.startswith("/api/")
+            and not path.startswith(_ACTIVITY_SKIP_PREFIXES)
+        ):
+            from app.core.database import SessionLocal
+            from app.models.audit import ActivityEvent
+
+            xff = request.headers.get("x-forwarded-for")
+            ip = xff.split(",")[0].strip() if xff else (request.client.host if request.client else None)
+
+            db = SessionLocal()
+            try:
+                db.add(ActivityEvent(
+                    user_id=user_id,
+                    method=request.method,
+                    path=path[:255],
+                    status_code=response.status_code,
+                    ip_address=(ip or "")[:64] or None,
+                ))
+                db.commit()
+            finally:
+                db.close()
+    except Exception as e:
+        logger.warning(f"activity logging failed: {e}")
+    return response
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -72,6 +113,7 @@ app.include_router(accounts.router)
 app.include_router(incomes.router)
 app.include_router(savings.router, prefix="/api")
 app.include_router(chat.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

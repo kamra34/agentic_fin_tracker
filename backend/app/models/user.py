@@ -15,6 +15,7 @@ class User(Base):
     timezone = Column(String(50), default="UTC", nullable=True)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    last_login = Column(DateTime, nullable=True)  # updated on each successful login
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

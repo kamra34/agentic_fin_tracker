@@ -9,6 +9,7 @@ import MonthlyExpenses from './pages/MonthlyExpenses'
 import ControlCenter from './pages/ControlCenter'
 import Management from './pages/Management'
 import Savings from './pages/Savings'
+import Admin from './pages/Admin'
 import Navigation from './components/Navigation'
 import FloatingChat from './components/FloatingChat'
 import { CurrencyProvider } from './context/CurrencyContext'
@@ -141,6 +142,22 @@ function App() {
                   <Navigation />
                   <main className="main-content">
                     <Profile />
+                  </main>
+                  <FloatingChat />
+                </div>
+              </CurrencyProvider>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <CurrencyProvider>
+                <div className="app">
+                  <Navigation />
+                  <main className="main-content">
+                    <Admin />
                   </main>
                   <FloatingChat />
                 </div>

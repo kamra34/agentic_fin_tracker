@@ -1,9 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { logout } from '../services/api'
+import { logout, getCurrentUser } from '../services/api'
 import './Navigation.css'
 
 function Navigation() {
   const location = useLocation()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getCurrentUser()
+      .then((u) => { if (active && u) setIsAdmin(!!u.is_superuser) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -94,6 +104,19 @@ function Navigation() {
               <span>Profile</span>
             </Link>
           </li>
+          {isAdmin && (
+            <li>
+              <Link
+                to="/admin"
+                className={location.pathname === '/admin' ? 'active' : ''}
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L4 5V11C4 16 7.5 20.5 12 22C16.5 20.5 20 16 20 11V5L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                </svg>
+                <span>Admin</span>
+              </Link>
+            </li>
+          )}
           <li>
             <button onClick={handleLogout} className="logout-btn">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

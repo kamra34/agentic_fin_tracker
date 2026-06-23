@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.database import get_db, get_readonly_db
@@ -13,6 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 async def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
@@ -32,10 +33,14 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
 
+    # Stamp the request so the activity-logging middleware knows who made it
+    request.state.user_id = user.id
+
     return user
 
 
 async def get_current_user_readonly(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_readonly_db)
 ) -> User:
@@ -47,7 +52,7 @@ async def get_current_user_readonly(
     cache makes the auth lookup and the endpoint share ONE AUTOCOMMIT session, so
     nothing sits 'idle in transaction' while the agents call OpenAI.
     """
-    return await get_current_user(token=token, db=db)
+    return await get_current_user(request=request, token=token, db=db)
 
 
 async def get_current_active_user(

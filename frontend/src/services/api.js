@@ -622,6 +622,37 @@ export async function getSavingsAccountStats(accountId) {
   return handleResponse(response)
 }
 
+// ===== Admin API (superuser only) =====
+
+export async function getAdminUsers() {
+  const response = await timedFetch(`${API_BASE_URL}/api/admin/users`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getAdminLoginHistory(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.userId) qs.set('user_id', params.userId)
+  if (params.limit) qs.set('limit', params.limit)
+  const suffix = qs.toString() ? `?${qs.toString()}` : ''
+  const response = await timedFetch(`${API_BASE_URL}/api/admin/login-history${suffix}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
+export async function getAdminActivity(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.userId) qs.set('user_id', params.userId)
+  if (params.limit) qs.set('limit', params.limit)
+  const suffix = qs.toString() ? `?${qs.toString()}` : ''
+  const response = await timedFetch(`${API_BASE_URL}/api/admin/activity${suffix}`, {
+    headers: getAuthHeaders()
+  })
+  return handleResponse(response)
+}
+
 // ===== Chat API =====
 
 export async function sendChatMessage(message) {
