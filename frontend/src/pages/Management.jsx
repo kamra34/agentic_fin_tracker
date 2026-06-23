@@ -53,7 +53,8 @@ function Management() {
   })
   const [incomeFormData, setIncomeFormData] = useState({
     source_name: '',
-    current_amount: ''
+    current_amount: '',
+    account_id: ''
   })
   const [editingIncome, setEditingIncome] = useState(null)
 
@@ -163,21 +164,24 @@ function Management() {
   const handleIncomeSubmit = async (e) => {
     e.preventDefault()
     try {
+      const accountId = incomeFormData.account_id ? parseInt(incomeFormData.account_id) : null
       if (editingIncome) {
         await updateIncomeTemplate(editingIncome.id, {
           source_name: incomeFormData.source_name,
-          current_amount: parseFloat(incomeFormData.current_amount)
+          current_amount: parseFloat(incomeFormData.current_amount),
+          account_id: accountId
         })
         setEditingIncome(null)
       } else {
         await createIncomeTemplate({
           source_name: incomeFormData.source_name,
-          current_amount: parseFloat(incomeFormData.current_amount)
+          current_amount: parseFloat(incomeFormData.current_amount),
+          account_id: accountId
         })
       }
       setShowIncomeForm(false)
       setShowIncomeModal(false)
-      setIncomeFormData({ source_name: '', current_amount: '' })
+      setIncomeFormData({ source_name: '', current_amount: '', account_id: '' })
       await loadData()
     } catch (error) {
       console.error('Error saving income source:', error)
@@ -188,7 +192,8 @@ function Management() {
   const handleEditIncome = (income) => {
     setIncomeFormData({
       source_name: income.source_name,
-      current_amount: income.current_amount.toString()
+      current_amount: income.current_amount.toString(),
+      account_id: income.account_id?.toString() || ''
     })
     setEditingIncome(income)
     setShowIncomeModal(true)
@@ -210,7 +215,7 @@ function Management() {
     setEditingIncome(null)
     setShowIncomeForm(false)
     setShowIncomeModal(false)
-    setIncomeFormData({ source_name: '', current_amount: '' })
+    setIncomeFormData({ source_name: '', current_amount: '', account_id: '' })
   }
 
   // Expense template handlers
@@ -573,6 +578,20 @@ function Management() {
                   placeholder="e.g., 50000"
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="income-account">Default Account (optional)</label>
+                <select
+                  id="income-account"
+                  value={incomeFormData.account_id}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Unassigned</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+              </div>
               <button type="submit" className="btn-primary">
                 Create Income Source
               </button>
@@ -596,6 +615,15 @@ function Management() {
                     <span className="stat-label">monthly</span>
                   </div>
                 </div>
+                {income.account_id && (() => {
+                  const acc = accounts.find(a => a.id === income.account_id)
+                  return acc ? (
+                    <div className="stat" style={{ marginTop: '0.5rem' }}>
+                      <span className="stat-value" style={{ fontSize: '0.95rem' }}>{acc.name}</span>
+                      <span className="stat-label">→ {acc.owner_name}</span>
+                    </div>
+                  ) : null
+                })()}
                 <div className="item-actions">
                   <button
                     onClick={() => handleEditIncome(income)}
@@ -1065,6 +1093,23 @@ function Management() {
                   className="form-input"
                   placeholder="e.g., 50000"
                 />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-income-account">Default Account (optional)</label>
+                <select
+                  id="modal-income-account"
+                  value={incomeFormData.account_id}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Unassigned</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                  Generated monthly income inherits this account, so it's attributed automatically.
+                </p>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={handleCancelIncomeEdit}>

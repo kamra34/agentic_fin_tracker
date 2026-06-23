@@ -1976,3 +1976,142 @@
     width: 100%;
   }
 }
+
+/* ============================================
+   PER-PERSON NET (income attribution)
+   ============================================ */
+.owner-net-section {
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.owner-net-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.owner-net-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--text-secondary);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.owner-net-card.positive { border-left-color: var(--success-color, #10b981); }
+.owner-net-card.negative { border-left-color: var(--danger-color, #ef4444); }
+
+/* "Unassigned" is a catch-all bucket, not a real person — render it muted */
+.owner-net-card-unassigned {
+  border-left-color: var(--text-secondary);
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.owner-net-card-unassigned .owner-net-value { color: var(--text-secondary); }
+
+.owner-net-hint {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.owner-net-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.owner-net-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.owner-net-card.positive .owner-net-value { color: var(--success-color, #10b981); }
+.owner-net-card.negative .owner-net-value { color: var(--danger-color, #ef4444); }
+
+.owner-net-breakdown {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+.owner-net-breakdown .onb-income { color: var(--success-color, #10b981); }
+.owner-net-breakdown .onb-expense { color: var(--danger-color, #ef4444); }
+
+.owner-net-detail {
+  margin-top: 1.25rem;
+}
+
+.owner-net-detail > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.owner-net-accounts {
+  margin-top: 0.75rem;
+}
+
+.owner-net-account-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.875rem;
+}
+
+.owner-net-account-row .ona-income,
+.owner-net-account-row .ona-expense,
+.owner-net-account-row .ona-net { text-align: right; }
+
+.owner-net-account-head {
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.owner-net-account-row .ona-income { color: var(--success-color, #10b981); }
+.owner-net-account-row .ona-expense { color: var(--danger-color, #ef4444); }
+.owner-net-account-row .ona-net.positive { color: var(--success-color, #10b981); font-weight: 600; }
+.owner-net-account-row .ona-net.negative { color: var(--danger-color, #ef4444); font-weight: 600; }
+.owner-net-account-head .ona-income,
+.owner-net-account-head .ona-expense,
+.owner-net-account-head .ona-net { color: var(--text-secondary); }
+
+/* Income row: attributed account + inline hint in the income modal */
+.income-account-line {
+  margin-top: 0.2rem;
+}
+
+.income-account {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.income-account-unassigned {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.field-hint-inline {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0.4rem 0 0;
+  font-style: italic;
+}

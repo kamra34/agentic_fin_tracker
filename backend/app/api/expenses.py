@@ -307,7 +307,9 @@ async def get_monthly_all_data(
         "summary": expense_service.get_monthly_summary(current_user.id, year, month),
         "allocation": expense_service.get_monthly_account_allocation(current_user.id, year, month),
         "incomes": income_service.get_monthly_incomes(current_user.id, month_str),
-        "income_total": {"total": income_service.get_monthly_total(current_user.id, month_str)}
+        "income_total": {"total": income_service.get_monthly_total(current_user.id, month_str)},
+        "income_allocation": income_service.get_monthly_income_allocation(current_user.id, month_str),
+        "owner_net": income_service.get_monthly_owner_net(current_user.id, year, month, expense_service),
     }
 
 

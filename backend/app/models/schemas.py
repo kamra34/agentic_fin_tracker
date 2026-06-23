@@ -227,6 +227,7 @@ class AccountWithStats(AccountResponse):
 class IncomeTemplateBase(BaseModel):
     source_name: str = Field(..., min_length=1, max_length=100)
     current_amount: float = Field(..., ge=0)
+    account_id: Optional[int] = None  # Default account income lands in (None = unassigned)
 
 
 class IncomeTemplateCreate(IncomeTemplateBase):
@@ -237,6 +238,7 @@ class IncomeTemplateUpdate(BaseModel):
     source_name: Optional[str] = Field(None, min_length=1, max_length=100)
     current_amount: Optional[float] = Field(None, ge=0)
     is_active: Optional[bool] = None
+    account_id: Optional[int] = None
 
 
 class IncomeTemplateResponse(IncomeTemplateBase):
@@ -257,6 +259,7 @@ class MonthlyIncomeBase(BaseModel):
     amount: float = Field(..., ge=0)
     is_one_time: bool = False
     description: Optional[str] = Field(None, max_length=255)
+    account_id: Optional[int] = None  # Account income lands in (None = unassigned)
 
 
 class MonthlyIncomeCreate(BaseModel):
@@ -266,12 +269,14 @@ class MonthlyIncomeCreate(BaseModel):
     amount: float = Field(..., ge=0)
     is_one_time: bool = False
     description: Optional[str] = Field(None, max_length=255)
+    account_id: Optional[int] = None
 
 
 class MonthlyIncomeUpdate(BaseModel):
     source_name: Optional[str] = Field(None, min_length=1, max_length=100)
     amount: Optional[float] = Field(None, ge=0)
     description: Optional[str] = Field(None, max_length=255)
+    account_id: Optional[int] = None
 
 
 class MonthlyIncomeResponse(MonthlyIncomeBase):

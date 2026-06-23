@@ -36,6 +36,7 @@ function MonthlyExpenses() {
   const [accountAllocation, setAccountAllocation] = useState({ allocations: [] })
   const [monthlyIncomes, setMonthlyIncomes] = useState([])
   const [incomeTotal, setIncomeTotal] = useState(0)
+  const [ownerNet, setOwnerNet] = useState({ owners: [], accounts: [] })
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showIncomeForm, setShowIncomeForm] = useState(false)
@@ -55,7 +56,8 @@ function MonthlyExpenses() {
   const [incomeFormData, setIncomeFormData] = useState({
     source_name: '',
     amount: '',
-    description: ''
+    description: '',
+    account_id: ''
   })
   const [expenseFilters, setExpenseFilters] = useState({
     category_id: '',
@@ -117,6 +119,7 @@ function MonthlyExpenses() {
       setAccountAllocation(data.allocation)
       setMonthlyIncomes(data.incomes)
       setIncomeTotal(data.income_total.total || 0)
+      setOwnerNet(data.owner_net || { owners: [], accounts: [] })
     } catch (error) {
       console.error('Error loading monthly data:', error)
     } finally {
@@ -311,7 +314,7 @@ function MonthlyExpenses() {
 
   const handleAddOneTimeIncome = () => {
     setEditingIncome(null)
-    setIncomeFormData({ source_name: '', amount: '', description: '' })
+    setIncomeFormData({ source_name: '', amount: '', description: '', account_id: '' })
     setShowIncomeModal(true)
   }
 
@@ -320,7 +323,8 @@ function MonthlyExpenses() {
     setIncomeFormData({
       source_name: income.source_name,
       amount: income.amount.toString(),
-      description: income.description || ''
+      description: income.description || '',
+      account_id: income.account_id?.toString() || ''
     })
     setShowIncomeModal(true)
   }
@@ -329,11 +333,13 @@ function MonthlyExpenses() {
     e.preventDefault()
     try {
       const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+      const accountId = incomeFormData.account_id ? parseInt(incomeFormData.account_id) : null
       if (editingIncome) {
         await updateMonthlyIncome(editingIncome.id, {
           source_name: incomeFormData.source_name,
           amount: parseFloat(incomeFormData.amount),
-          description: incomeFormData.description
+          description: incomeFormData.description,
+          account_id: accountId
         })
       } else {
         await createMonthlyIncome({
@@ -341,12 +347,13 @@ function MonthlyExpenses() {
           source_name: incomeFormData.source_name,
           amount: parseFloat(incomeFormData.amount),
           is_one_time: true,
-          description: incomeFormData.description
+          description: incomeFormData.description,
+          account_id: accountId
         })
       }
       setShowIncomeModal(false)
       setEditingIncome(null)
-      setIncomeFormData({ source_name: '', amount: '', description: '' })
+      setIncomeFormData({ source_name: '', amount: '', description: '', account_id: '' })
       await loadMonthlyData()
     } catch (error) {
       console.error('Error saving income:', error)
@@ -369,7 +376,14 @@ function MonthlyExpenses() {
   const handleCancelIncomeForm = () => {
     setShowIncomeModal(false)
     setEditingIncome(null)
-    setIncomeFormData({ source_name: '', amount: '', description: '' })
+    setIncomeFormData({ source_name: '', amount: '', description: '', account_id: '' })
+  }
+
+  // Resolve an account_id to a "Name (Owner)" label using the loaded accounts list
+  const getAccountLabel = (accountId) => {
+    if (!accountId) return null
+    const acc = accounts.find(a => a.id === accountId)
+    return acc ? `${acc.name} (${acc.owner_name})` : null
   }
 
   // Expense template handler
@@ -549,6 +563,62 @@ function MonthlyExpenses() {
         </div>
       )}
 
+      {/* Per-Person Net: income attributed to each person minus their expenses */}
+      {ownerNet.owners && ownerNet.owners.length > 0 && (
+        <div className="owner-net-section">
+          <div className="flow-section-header">
+            <h3 className="flow-section-title">Budget Left Per Person</h3>
+            <p className="flow-section-subtitle">Income minus expenses — what's left for each person / account this month</p>
+          </div>
+          <div className="owner-net-grid">
+            {ownerNet.owners.map((o, index) => {
+              const isUnassigned = o.owner_name === 'Unassigned'
+              const cardClass = isUnassigned
+                ? 'owner-net-card owner-net-card-unassigned'
+                : `owner-net-card ${o.net >= 0 ? 'positive' : 'negative'}`
+              return (
+                <div key={index} className={cardClass}>
+                  <div className="owner-net-name">{o.owner_name}</div>
+                  <div className="owner-net-value">{formatAmount(o.net)}</div>
+                  <div className="owner-net-breakdown">
+                    <span className="onb-income">+{formatAmount(o.income_total)}</span>
+                    <span className="onb-expense">−{formatAmount(o.expense_total)}</span>
+                  </div>
+                  {isUnassigned && (
+                    <div className="owner-net-hint">
+                      Catch-all (not a person) — assign accounts to income/expenses to attribute them
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {ownerNet.accounts && ownerNet.accounts.length > 0 && (
+            <details className="owner-net-detail">
+              <summary>Per-account detail</summary>
+              <div className="owner-net-accounts">
+                <div className="owner-net-account-row owner-net-account-head">
+                  <span className="ona-name">Account</span>
+                  <span className="ona-income">Income</span>
+                  <span className="ona-expense">Expenses</span>
+                  <span className="ona-net">Net</span>
+                </div>
+                {ownerNet.accounts.map((a, index) => (
+                  <div key={index} className="owner-net-account-row">
+                    <span className="ona-name">
+                      {a.account_name}{a.owner_name ? ` (${a.owner_name})` : ''}
+                    </span>
+                    <span className="ona-income">+{formatAmount(a.income_total)}</span>
+                    <span className="ona-expense">−{formatAmount(a.expense_total)}</span>
+                    <span className={`ona-net ${a.net >= 0 ? 'positive' : 'negative'}`}>{formatAmount(a.net)}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+
       {/* Income Section */}
       <div className="income-section">
         <div className="section-header">
@@ -621,6 +691,11 @@ function MonthlyExpenses() {
                     {income.source_name}
                     {income.is_one_time && <span className="one-time-badge">One-time</span>}
                     {!income.is_one_time && <span className="recurring-badge">Recurring</span>}
+                  </div>
+                  <div className="income-account-line">
+                    {getAccountLabel(income.account_id)
+                      ? <span className="income-account">→ {getAccountLabel(income.account_id)}</span>
+                      : <span className="income-account income-account-unassigned">→ Unassigned</span>}
                   </div>
                   {income.description && (
                     <div className="income-description">{income.description}</div>
@@ -782,6 +857,23 @@ function MonthlyExpenses() {
                   className="form-input"
                   placeholder="e.g., Bonus, Freelance Project"
                 />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-income-account">Goes to account (optional)</label>
+                <select
+                  id="modal-income-account"
+                  value={incomeFormData.account_id}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Unassigned</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.owner_name})
+                    </option>
+                  ))}
+                </select>
+                <p className="field-hint-inline">Attributes this income to a person so per-person Net stays with them.</p>
               </div>
               <div className="form-group">
                 <label htmlFor="modal-income-amount">Amount</label>

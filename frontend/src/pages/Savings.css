@@ -848,6 +848,18 @@
   font-style: italic;
 }
 
+/* Override the global .field-hint { display:flex } from Profile.css so multi-part
+   hints (with <strong>) render as a normal paragraph instead of flex columns. */
+.savings .field-hint {
+  display: block;
+  line-height: 1.5;
+}
+
+.savings .field-hint strong {
+  font-weight: 700;
+  font-style: normal;
+}
+
 .modal-actions {
   display: flex;
   gap: 1rem;

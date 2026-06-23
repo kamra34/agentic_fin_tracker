@@ -13,11 +13,14 @@ class IncomeTemplate(Base):
     current_amount = Column(Float, nullable=False)  # Current/latest amount
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_active = Column(Boolean, default=True)
+    # Default account this income lands in; copied onto generated MonthlyIncome rows. NULL = unassigned.
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     user = relationship("User", back_populates="income_templates")
+    account = relationship("Account")
     monthly_entries = relationship("MonthlyIncome", back_populates="template", cascade="all, delete-orphan")
 
 
@@ -33,7 +36,10 @@ class MonthlyIncome(Base):
     is_one_time = Column(Boolean, default=False)  # True for bonus, one-time payments
     description = Column(String(255), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Account this income lands in; used for per-account / per-owner net. NULL = unassigned (legacy rows).
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True, index=True)
 
     # Relationships
     user = relationship("User", back_populates="monthly_incomes")
     template = relationship("IncomeTemplate", back_populates="monthly_entries")
+    account = relationship("Account")

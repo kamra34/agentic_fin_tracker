@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from app.models.income import IncomeTemplate, MonthlyIncome
+from app.models.account import Account
 from app.models.schemas import (
     IncomeTemplateCreate, IncomeTemplateUpdate,
     MonthlyIncomeCreate, MonthlyIncomeUpdate
@@ -81,7 +82,13 @@ class IncomeService:
 
     def create_monthly_income(self, income: MonthlyIncomeCreate, user_id: int) -> MonthlyIncome:
         """Create a new monthly income entry"""
-        db_income = MonthlyIncome(**income.model_dump(), user_id=user_id)
+        data = income.model_dump()
+        # If no account was specified but it came from a template, inherit the template's account
+        if data.get("account_id") is None and data.get("template_id"):
+            template = self.get_template_by_id(data["template_id"], user_id)
+            if template and template.account_id:
+                data["account_id"] = template.account_id
+        db_income = MonthlyIncome(**data, user_id=user_id)
         self.db.add(db_income)
         self.db.commit()
         self.db.refresh(db_income)
@@ -138,6 +145,7 @@ class IncomeService:
                 source_name=template.source_name,
                 amount=template.current_amount,
                 is_one_time=False,
+                account_id=template.account_id,  # inherit the template's destination account
                 user_id=user_id
             )
             self.db.add(monthly_income)
@@ -181,3 +189,119 @@ class IncomeService:
             }
             for r in results
         ]
+
+    # ========== ACCOUNT / OWNER ATTRIBUTION ==========
+
+    def get_monthly_income_allocation(self, user_id: int, month: str) -> Dict:
+        """Get monthly income grouped by the account it lands in (mirror of the expense allocation).
+
+        `month` is the string 'YYYY-MM' (MonthlyIncome stores month as a string, not a date range).
+        Income with no account is bucketed as 'Unassigned', exactly like NULL-account expenses.
+        """
+        result = self.db.query(
+            MonthlyIncome.account_id,
+            Account.name,
+            Account.owner_name,
+            func.sum(MonthlyIncome.amount).label('total_amount'),
+            func.count(MonthlyIncome.id).label('income_count')
+        ).outerjoin(Account, MonthlyIncome.account_id == Account.id).filter(
+            MonthlyIncome.user_id == user_id,
+            MonthlyIncome.month == month
+        ).group_by(MonthlyIncome.account_id, Account.name, Account.owner_name).all()
+
+        allocations = []
+        total_income = 0.0
+        for row in result:
+            total = float(row.total_amount or 0)
+            total_income += total
+            if row.account_id:
+                allocations.append({
+                    'account_id': row.account_id,
+                    'account_name': row.name or 'Unknown',
+                    'owner_name': row.owner_name or 'Unknown',
+                    'total_amount': total,
+                    'income_count': row.income_count
+                })
+            else:
+                allocations.append({
+                    'account_id': None,
+                    'account_name': 'Unassigned',
+                    'owner_name': None,
+                    'total_amount': total,
+                    'income_count': row.income_count
+                })
+
+        return {'month': month, 'total_income': total_income, 'allocations': allocations}
+
+    def get_monthly_owner_net(self, user_id: int, year: int, month: int, expense_service) -> Dict:
+        """Per-owner and per-account NET (income into the account/owner minus expenses out of it).
+
+        - SHARED is its own bucket (not split between people).
+        - Owner names are normalized (strip/upper) for keying so 'Kamiar' and 'KAMIAR' don't split.
+        - Income/expenses with no account fall under an 'Unassigned' bucket (a catch-all, NOT a person).
+        - Expenses are paid-only (status == True), and income has no status, so net is
+          (all income) - (paid expenses). This is intentional: it matches the Monthly page's
+          existing "Expenses" and "Net" KPIs (get_monthly_summary also filters status == True),
+          so the per-person nets reconcile with the global Net chip.
+        """
+        month_str = f"{year}-{month:02d}"
+        income_alloc = self.get_monthly_income_allocation(user_id, month_str)
+        expense_alloc = expense_service.get_monthly_account_allocation(user_id, year, month)
+
+        def owner_key(name):
+            return name.strip().upper() if name else 'UNASSIGNED'
+
+        def owner_display(name):
+            return name.strip() if name else 'Unassigned'
+
+        owners = {}    # normalized owner key -> aggregate
+        accounts = {}  # account_id (or 'unassigned') -> aggregate
+
+        def bump_owner(name, field, amount):
+            k = owner_key(name)
+            if k not in owners:
+                owners[k] = {'owner_name': owner_display(name), 'income_total': 0.0, 'expense_total': 0.0}
+            owners[k][field] += amount
+
+        def bump_account(account_id, account_name, owner_name, field, amount):
+            k = account_id if account_id is not None else 'unassigned'
+            if k not in accounts:
+                accounts[k] = {
+                    'account_id': account_id,
+                    'account_name': account_name or 'Unassigned',
+                    'owner_name': owner_display(owner_name) if owner_name else None,
+                    'income_total': 0.0,
+                    'expense_total': 0.0,
+                }
+            accounts[k][field] += amount
+
+        for a in income_alloc['allocations']:
+            bump_owner(a['owner_name'], 'income_total', a['total_amount'])
+            bump_account(a['account_id'], a['account_name'], a['owner_name'], 'income_total', a['total_amount'])
+        for a in expense_alloc['allocations']:
+            bump_owner(a['owner_name'], 'expense_total', a['total_amount'])
+            bump_account(a['account_id'], a['account_name'], a['owner_name'], 'expense_total', a['total_amount'])
+
+        owner_list = []
+        for v in owners.values():
+            v['net'] = v['income_total'] - v['expense_total']
+            owner_list.append(v)
+        owner_list.sort(key=lambda x: x['owner_name'] or 'zzz')
+
+        account_list = []
+        for v in accounts.values():
+            v['net'] = v['income_total'] - v['expense_total']
+            account_list.append(v)
+        account_list.sort(key=lambda x: (x['owner_name'] or 'zzz', x['account_name'] or ''))
+
+        total_income = income_alloc['total_income']
+        total_expenses = expense_alloc['total_expenses']
+        return {
+            'year': year,
+            'month': month,
+            'total_income': total_income,
+            'total_expenses': total_expenses,
+            'net': total_income - total_expenses,
+            'owners': owner_list,
+            'accounts': account_list,
+        }
