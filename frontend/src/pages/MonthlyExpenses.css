@@ -934,6 +934,77 @@
   z-index: 1;
 }
 
+/* Click a tile to drill into the expenses that make up its allocation */
+.allocation-flow-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.allocation-flow-row {
+  cursor: pointer;
+}
+
+.allocation-flow-row.is-open {
+  border-color: #10b981;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.allocation-expenses {
+  background: var(--bg-primary);
+  border: 2px solid #10b981;
+  border-top: none;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  padding: 0.25rem 1.5rem 0.75rem;
+  animation: fadeIn 0.25s ease-in;
+}
+
+.allocation-expense-item {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.55rem 0.25rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.allocation-expense-item:last-child {
+  border-bottom: none;
+}
+
+.allocation-expense-item .ae-date {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.allocation-expense-item .ae-cat {
+  color: var(--text-primary);
+}
+
+.allocation-expense-item .ae-amount {
+  text-align: right;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.allocation-expense-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .allocation-expense-item {
+    grid-template-columns: 1fr auto;
+    row-gap: 0.15rem;
+  }
+  .allocation-expense-item .ae-date {
+    grid-column: 1 / -1;
+  }
+}
+
 .allocation-flow-row {
   display: grid;
   grid-template-columns: 200px 1fr 200px;
@@ -2095,6 +2166,22 @@
 
 .owner-net-account-row .ona-income { color: var(--success-color, #10b981); }
 .owner-net-account-row .ona-expense { color: var(--danger-color, #ef4444); }
+
+/* "Spending by account" — 2-column layout, neutral amount (it's spending, not a loss) */
+.owner-net-detail-note {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0.25rem;
+  line-height: 1.4;
+}
+
+.owner-net-accounts-spend .owner-net-account-row {
+  grid-template-columns: 1fr auto;
+}
+
+.owner-net-accounts-spend .ona-expense { color: var(--text-primary); }
+.owner-net-accounts-spend .owner-net-account-head .ona-expense { color: var(--text-secondary); }
 .owner-net-account-row .ona-net.positive { color: var(--success-color, #10b981); font-weight: 600; }
 .owner-net-account-row .ona-net.negative { color: var(--danger-color, #ef4444); font-weight: 600; }
 .owner-net-account-head .ona-income,

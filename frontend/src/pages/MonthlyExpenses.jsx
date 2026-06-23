@@ -37,6 +37,7 @@ function MonthlyExpenses() {
   const [monthlyIncomes, setMonthlyIncomes] = useState([])
   const [incomeTotal, setIncomeTotal] = useState(0)
   const [ownerNet, setOwnerNet] = useState({ owners: [], accounts: [] })
+  const [expandedAllocation, setExpandedAllocation] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showIncomeForm, setShowIncomeForm] = useState(false)
@@ -386,6 +387,12 @@ function MonthlyExpenses() {
     return acc ? `${acc.name} (${acc.owner_name})` : null
   }
 
+  // Expenses that make up a Payment Allocation tile (paid-only, to match the tile's total/count)
+  const getAllocationExpenses = (allocation) => {
+    const accId = allocation.account_id ?? null
+    return expenses.filter(e => e.status === true && (e.account_id ?? null) === accId)
+  }
+
   // Expense template handler
   const handleGenerateExpenses = async () => {
     try {
@@ -538,27 +545,66 @@ function MonthlyExpenses() {
           <div className="allocation-flow-container">
             {accountAllocation.allocations
               .filter(allocation => allocation.total_amount > 0)
-              .map((allocation, index) => (
-                <div key={index} className="allocation-flow-row">
-                  <div className="flow-amount">
-                    <span className="amount-value">{formatAmount(allocation.total_amount)}</span>
-                    <span className="amount-label">{allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}</span>
-                  </div>
-                  <div className="flow-arrow-container">
-                    <div className="flow-arrow">
-                      <div className="arrow-line"></div>
-                      <div className="arrow-head"></div>
-                      <div className="arrow-particles"></div>
+              .map((allocation, index) => {
+                const key = allocation.account_id ?? 'unassigned'
+                const isOpen = expandedAllocation === key
+                const items = getAllocationExpenses(allocation)
+                return (
+                  <div key={index} className="allocation-flow-item">
+                    <div
+                      className={`allocation-flow-row ${isOpen ? 'is-open' : ''}`}
+                      onClick={() => setExpandedAllocation(isOpen ? null : key)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(ev) => {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                          ev.preventDefault()
+                          setExpandedAllocation(isOpen ? null : key)
+                        }
+                      }}
+                      title="Click to see the expenses"
+                    >
+                      <div className="flow-amount">
+                        <span className="amount-value">{formatAmount(allocation.total_amount)}</span>
+                        <span className="amount-label">
+                          {isOpen ? '▾' : '▸'} {allocation.expense_count} {allocation.expense_count === 1 ? 'expense' : 'expenses'}
+                        </span>
+                      </div>
+                      <div className="flow-arrow-container">
+                        <div className="flow-arrow">
+                          <div className="arrow-line"></div>
+                          <div className="arrow-head"></div>
+                          <div className="arrow-particles"></div>
+                        </div>
+                      </div>
+                      <div className="flow-account">
+                        <span className="account-name">{allocation.account_name || 'Unassigned'}</span>
+                        {allocation.owner_name && (
+                          <span className="account-owner">{allocation.owner_name}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flow-account">
-                    <span className="account-name">{allocation.account_name || 'Unassigned'}</span>
-                    {allocation.owner_name && (
-                      <span className="account-owner">{allocation.owner_name}</span>
+                    {isOpen && (
+                      <div className="allocation-expenses">
+                        {items.length === 0 ? (
+                          <div className="allocation-expense-empty">No itemized expenses to show.</div>
+                        ) : (
+                          items.map((e) => (
+                            <div key={e.id} className="allocation-expense-item">
+                              <span className="ae-date">{e.date}</span>
+                              <span className="ae-cat">
+                                {e.category_name || e.category || '-'}
+                                {(e.subcategory_name || e.subcategory) ? ` · ${e.subcategory_name || e.subcategory}` : ''}
+                              </span>
+                              <span className="ae-amount">{formatAmount(e.amount)}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
           </div>
         </div>
       )}
@@ -593,29 +639,32 @@ function MonthlyExpenses() {
               )
             })}
           </div>
-          {ownerNet.accounts && ownerNet.accounts.length > 0 && (
+          {ownerNet.accounts && ownerNet.accounts.some(a => a.expense_total > 0) && (
             <details className="owner-net-detail">
-              <summary>Per-account detail</summary>
-              <div className="owner-net-accounts">
+              <summary>Spending by account</summary>
+              <p className="owner-net-detail-note">
+                Where money was spent this month. (Income lands in the account that receives it —
+                see the per-person totals above; transfers between accounts aren't tracked, so
+                there's no per-account "net".)
+              </p>
+              <div className="owner-net-accounts owner-net-accounts-spend">
                 <div className="owner-net-account-row owner-net-account-head">
                   <span className="ona-name">Account</span>
-                  <span className="ona-income">Income</span>
-                  <span className="ona-expense">Expenses</span>
-                  <span className="ona-net">Net</span>
+                  <span className="ona-expense">Spent</span>
                 </div>
-                {ownerNet.accounts.map((a, index) => (
-                  <div key={index} className="owner-net-account-row">
-                    <span className="ona-name">
-                      {a.account_name}{a.owner_name ? ` (${a.owner_name})` : ''}
-                      {a.funded_by_account_name && a.effective_owner && (
-                        <span className="ona-funded"> → {a.effective_owner}</span>
-                      )}
-                    </span>
-                    <span className="ona-income">+{formatAmount(a.income_total)}</span>
-                    <span className="ona-expense">−{formatAmount(a.expense_total)}</span>
-                    <span className={`ona-net ${a.net >= 0 ? 'positive' : 'negative'}`}>{formatAmount(a.net)}</span>
-                  </div>
-                ))}
+                {ownerNet.accounts
+                  .filter(a => a.expense_total > 0)
+                  .map((a, index) => (
+                    <div key={index} className="owner-net-account-row">
+                      <span className="ona-name">
+                        {a.account_name}{a.owner_name ? ` (${a.owner_name})` : ''}
+                        {a.funded_by_account_name && a.effective_owner && (
+                          <span className="ona-funded"> → {a.effective_owner}</span>
+                        )}
+                      </span>
+                      <span className="ona-expense">{formatAmount(a.expense_total)}</span>
+                    </div>
+                  ))}
               </div>
             </details>
           )}
