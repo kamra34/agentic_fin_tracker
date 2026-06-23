@@ -7,6 +7,7 @@ import {
   getAccountsWithStats,
   createCategory,
   createAccount,
+  updateAccount,
   updateCategory,
   deleteCategory,
   deleteAccount,
@@ -49,8 +50,11 @@ function Management() {
   })
   const [accountFormData, setAccountFormData] = useState({
     name: '',
-    owner_name: ''
+    owner_name: '',
+    funded_by_account_id: ''
   })
+  const [editingAccount, setEditingAccount] = useState(null)
+  const [showAccountModal, setShowAccountModal] = useState(false)
   const [incomeFormData, setIncomeFormData] = useState({
     source_name: '',
     current_amount: '',
@@ -127,14 +131,44 @@ function Management() {
   const handleAccountSubmit = async (e) => {
     e.preventDefault()
     try {
-      await createAccount(accountFormData)
+      const payload = {
+        name: accountFormData.name,
+        owner_name: accountFormData.owner_name,
+        funded_by_account_id: accountFormData.funded_by_account_id
+          ? parseInt(accountFormData.funded_by_account_id)
+          : null
+      }
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, payload)
+      } else {
+        await createAccount(payload)
+      }
       setShowAccountForm(false)
-      setAccountFormData({ name: '', owner_name: '' })
+      setShowAccountModal(false)
+      setEditingAccount(null)
+      setAccountFormData({ name: '', owner_name: '', funded_by_account_id: '' })
       await loadData()
     } catch (error) {
-      console.error('Error creating payment account:', error)
-      alert('Failed to create payment account: ' + (error.message || 'Unknown error'))
+      console.error('Error saving payment account:', error)
+      alert('Failed to save payment account: ' + (error.message || 'Unknown error'))
     }
+  }
+
+  const handleEditAccount = (account) => {
+    setEditingAccount(account)
+    setAccountFormData({
+      name: account.name,
+      owner_name: account.owner_name,
+      funded_by_account_id: account.funded_by_account_id?.toString() || ''
+    })
+    setShowAccountModal(true)
+  }
+
+  const handleCancelAccountEdit = () => {
+    setEditingAccount(null)
+    setShowAccountModal(false)
+    setShowAccountForm(false)
+    setAccountFormData({ name: '', owner_name: '', funded_by_account_id: '' })
   }
 
   const handleDeleteCategory = async (categoryId) => {
@@ -900,6 +934,23 @@ function Management() {
                   placeholder="e.g., John Doe"
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="funded-by">Deducted from (optional)</label>
+                <select
+                  id="funded-by"
+                  value={accountFormData.funded_by_account_id}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, funded_by_account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Its own budget (default)</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                  If set, this account's income/expenses count toward the owner of the chosen account in the Monthly per-person budget.
+                </p>
+              </div>
               <button type="submit" className="btn-primary">Create Payment Account</button>
             </form>
           </div>
@@ -925,7 +976,22 @@ function Management() {
                     <span className="stat-label">total</span>
                   </div>
                 </div>
+                {account.funded_by_account_id && (() => {
+                  const f = accounts.find(a => a.id === account.funded_by_account_id)
+                  return f ? (
+                    <div className="stat" style={{ marginTop: '0.5rem' }}>
+                      <span className="stat-value" style={{ fontSize: '0.95rem' }}>{f.name}</span>
+                      <span className="stat-label">deducted from ({f.owner_name})</span>
+                    </div>
+                  ) : null
+                })()}
                 <div className="item-actions">
+                  <button
+                    onClick={() => handleEditAccount(account)}
+                    className="btn-edit-small"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => handleDeleteAccount(account.id)}
                     className="btn-delete-small"
@@ -1118,6 +1184,63 @@ function Management() {
                 <button type="submit" className="btn-primary">
                   Update Income Source
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Payment Account Modal */}
+      {showAccountModal && (
+        <div className="modal-overlay" onClick={handleCancelAccountEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Payment Account</h3>
+              <button className="modal-close" onClick={handleCancelAccountEdit}>&times;</button>
+            </div>
+            <form onSubmit={handleAccountSubmit} style={{ padding: '2rem 2.5rem' }}>
+              <div className="form-group">
+                <label htmlFor="modal-account-name">Account Name</label>
+                <input
+                  type="text"
+                  id="modal-account-name"
+                  value={accountFormData.name}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, name: e.target.value })}
+                  required
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-owner-name">Owner Name</label>
+                <input
+                  type="text"
+                  id="modal-owner-name"
+                  value={accountFormData.owner_name}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, owner_name: e.target.value })}
+                  required
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="modal-funded-by">Deducted from (optional)</label>
+                <select
+                  id="modal-funded-by"
+                  value={accountFormData.funded_by_account_id}
+                  onChange={(e) => setAccountFormData({ ...accountFormData, funded_by_account_id: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Its own budget (default)</option>
+                  {accounts.filter(a => a.id !== editingAccount?.id).map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name} - {acc.owner_name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                  If set, this account's income/expenses count toward the owner of the chosen account in the Monthly per-person budget (e.g. SHARED topped up from your salary).
+                </p>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCancelAccountEdit}>Cancel</button>
+                <button type="submit" className="btn-primary">Update Account</button>
               </div>
             </form>
           </div>

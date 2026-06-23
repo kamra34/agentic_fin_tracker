@@ -607,6 +607,9 @@ function MonthlyExpenses() {
                   <div key={index} className="owner-net-account-row">
                     <span className="ona-name">
                       {a.account_name}{a.owner_name ? ` (${a.owner_name})` : ''}
+                      {a.funded_by_account_name && a.effective_owner && (
+                        <span className="ona-funded"> → {a.effective_owner}</span>
+                      )}
                     </span>
                     <span className="ona-income">+{formatAmount(a.income_total)}</span>
                     <span className="ona-expense">−{formatAmount(a.expense_total)}</span>

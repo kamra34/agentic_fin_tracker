@@ -243,10 +243,37 @@ class IncomeService:
           (all income) - (paid expenses). This is intentional: it matches the Monthly page's
           existing "Expenses" and "Net" KPIs (get_monthly_summary also filters status == True),
           so the per-person nets reconcile with the global Net chip.
+        - If an account has funded_by_account_id set, its income+expenses count toward the
+          OWNER of the funding account (chain followed, cycle-safe) - e.g. a SHARED account
+          topped up from Kamiar's account rolls into Kamiar's per-person budget.
         """
         month_str = f"{year}-{month:02d}"
         income_alloc = self.get_monthly_income_allocation(user_id, month_str)
         expense_alloc = expense_service.get_monthly_account_allocation(user_id, year, month)
+
+        # Load this user's accounts so we can resolve funding overrides (funded_by_account_id).
+        acc_rows = self.db.query(
+            Account.id, Account.name, Account.owner_name, Account.funded_by_account_id
+        ).filter(Account.user_id == user_id).all()
+        acc_map = {
+            r.id: {'name': r.name, 'owner_name': r.owner_name, 'funded_by': r.funded_by_account_id}
+            for r in acc_rows
+        }
+
+        def effective_owner(account_id):
+            """Owner whose budget this account counts toward, following funded_by (cycle-safe)."""
+            if account_id is None or account_id not in acc_map:
+                return None
+            seen = set()
+            cur = account_id
+            while cur in acc_map and cur not in seen:
+                seen.add(cur)
+                fb = acc_map[cur]['funded_by']
+                if fb is None or fb not in acc_map:
+                    return acc_map[cur]['owner_name']
+                cur = fb
+            # cycle fallback: use the starting account's own owner
+            return acc_map[account_id]['owner_name']
 
         def owner_key(name):
             return name.strip().upper() if name else 'UNASSIGNED'
@@ -254,10 +281,11 @@ class IncomeService:
         def owner_display(name):
             return name.strip() if name else 'Unassigned'
 
-        owners = {}    # normalized owner key -> aggregate
+        owners = {}    # normalized EFFECTIVE-owner key -> aggregate
         accounts = {}  # account_id (or 'unassigned') -> aggregate
 
-        def bump_owner(name, field, amount):
+        def bump_owner(account_id, field, amount):
+            name = effective_owner(account_id)
             k = owner_key(name)
             if k not in owners:
                 owners[k] = {'owner_name': owner_display(name), 'income_total': 0.0, 'expense_total': 0.0}
@@ -266,20 +294,26 @@ class IncomeService:
         def bump_account(account_id, account_name, owner_name, field, amount):
             k = account_id if account_id is not None else 'unassigned'
             if k not in accounts:
+                eff = effective_owner(account_id)
+                fb_id = acc_map.get(account_id, {}).get('funded_by') if account_id is not None else None
+                fb_name = acc_map.get(fb_id, {}).get('name') if fb_id is not None else None
                 accounts[k] = {
                     'account_id': account_id,
                     'account_name': account_name or 'Unassigned',
                     'owner_name': owner_display(owner_name) if owner_name else None,
+                    'effective_owner': owner_display(eff) if eff else None,
+                    'funded_by_account_id': fb_id,
+                    'funded_by_account_name': fb_name,
                     'income_total': 0.0,
                     'expense_total': 0.0,
                 }
             accounts[k][field] += amount
 
         for a in income_alloc['allocations']:
-            bump_owner(a['owner_name'], 'income_total', a['total_amount'])
+            bump_owner(a['account_id'], 'income_total', a['total_amount'])
             bump_account(a['account_id'], a['account_name'], a['owner_name'], 'income_total', a['total_amount'])
         for a in expense_alloc['allocations']:
-            bump_owner(a['owner_name'], 'expense_total', a['total_amount'])
+            bump_owner(a['account_id'], 'expense_total', a['total_amount'])
             bump_account(a['account_id'], a['account_name'], a['owner_name'], 'expense_total', a['total_amount'])
 
         owner_list = []
@@ -292,7 +326,7 @@ class IncomeService:
         for v in accounts.values():
             v['net'] = v['income_total'] - v['expense_total']
             account_list.append(v)
-        account_list.sort(key=lambda x: (x['owner_name'] or 'zzz', x['account_name'] or ''))
+        account_list.sort(key=lambda x: (x['effective_owner'] or x['owner_name'] or 'zzz', x['account_name'] or ''))
 
         total_income = income_alloc['total_income']
         total_expenses = expense_alloc['total_expenses']

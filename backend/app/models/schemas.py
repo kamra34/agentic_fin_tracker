@@ -202,17 +202,19 @@ class AccountBase(BaseModel):
 
 
 class AccountCreate(AccountBase):
-    pass
+    funded_by_account_id: Optional[int] = None
 
 
 class AccountUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     owner_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    funded_by_account_id: Optional[int] = None
 
 
 class AccountResponse(AccountBase):
     id: int
     user_id: int
+    funded_by_account_id: Optional[int] = None
 
     class Config:
         from_attributes = True

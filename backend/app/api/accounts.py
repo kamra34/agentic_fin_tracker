@@ -35,6 +35,7 @@ def get_accounts_with_stats(
         Account.name,
         Account.owner_name,
         Account.user_id,
+        Account.funded_by_account_id,
         func.count(Expense.id).label('expense_count'),
         func.coalesce(func.sum(Expense.amount), 0).label('total_amount')
     ).outerjoin(
@@ -51,6 +52,7 @@ def get_accounts_with_stats(
             name=acc.name,
             owner_name=acc.owner_name,
             user_id=acc.user_id,
+            funded_by_account_id=acc.funded_by_account_id,
             expense_count=acc.expense_count,
             total_amount=float(acc.total_amount)
         )
@@ -97,9 +99,22 @@ def create_account(
             detail="An account with this name already exists"
         )
 
+    # Validate the funding account (if provided) belongs to this user
+    if account.funded_by_account_id is not None:
+        funder = db.query(Account).filter(
+            Account.id == account.funded_by_account_id,
+            Account.user_id == current_user.id
+        ).first()
+        if not funder:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Funding account not found"
+            )
+
     db_account = Account(
         name=account.name,
         owner_name=account.owner_name,
+        funded_by_account_id=account.funded_by_account_id,
         user_id=current_user.id
     )
     db.add(db_account)
@@ -147,6 +162,27 @@ def update_account(
     if account_update.owner_name is not None:
         account.owner_name = account_update.owner_name
 
+    # funded_by_account_id: only touch it if the client actually sent the field
+    # (so a None explicitly clears it, but an omitted field leaves it unchanged).
+    if 'funded_by_account_id' in account_update.model_fields_set:
+        new_funder = account_update.funded_by_account_id
+        if new_funder is not None:
+            if new_funder == account_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="An account cannot fund itself"
+                )
+            funder = db.query(Account).filter(
+                Account.id == new_funder,
+                Account.user_id == current_user.id
+            ).first()
+            if not funder:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Funding account not found"
+                )
+        account.funded_by_account_id = new_funder
+
     db.commit()
     db.refresh(account)
     return account
@@ -179,6 +215,16 @@ def delete_account(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot delete account. It has {expense_count} associated expenses. Please reassign or delete them first."
+        )
+
+    # Prevent deleting an account that another account is "deducted from" (FK would error)
+    funder_for = db.query(func.count(Account.id)).filter(
+        Account.funded_by_account_id == account_id
+    ).scalar()
+    if funder_for > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete account. {funder_for} other account(s) are 'deducted from' it. Update those accounts first."
         )
 
     db.delete(account)
